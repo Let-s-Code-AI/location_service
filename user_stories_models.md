@@ -251,3 +251,4 @@ System zawiera 5 głównych modeli danych:
 - Każda oferta musi mieć powiązane: Location, Building, Owner i Features
 - Jeden Location/Building/Owner/Features może mieć wiele ofert (Listing)
 
+

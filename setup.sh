@@ -32,3 +32,4 @@ echo ""
 echo "Aby uruchomić aplikację:"
 echo "  uvicorn main:app --reload"
 
+
