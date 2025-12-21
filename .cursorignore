@@ -1,0 +1,50 @@
+# Środowisko wirtualne
+venv/
+env/
+ENV/
+.venv
+
+# Baza danych SQLite
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache Pythona
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Pliki środowiskowe
+.env
+.env.local
+.env.*.local
+
+# Pliki IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Pliki logów
+*.log
+logs/
+
+# Pliki build/dist
+build/
+dist/
+*.egg-info/
+
+# Duże pliki danych (odkomentuj jeśli chcesz ignorować)
+# data/*.csv
+
+# Pliki tymczasowe
+*.tmp
+*.bak
+*.cache
+
+# Pliki systemowe
+.DS_Store
+Thumbs.db

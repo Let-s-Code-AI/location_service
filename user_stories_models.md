@@ -252,3 +252,11 @@ System zawiera 5 głównych modeli danych:
 - Jeden Location/Building/Owner/Features może mieć wiele ofert (Listing)
 
 
+
+
+
+
+
+
+
+
