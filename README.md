@@ -8,7 +8,8 @@ A real-estate listings application organized as a **monorepo**: every deployable
 .
 ├── services/
 │   ├── backend/             # FastAPI + SQLAlchemy (async) + SQLite + Alembic
-│   └── frontend/            # React + Vite
+│   ├── frontend/            # React + Vite
+│   └── e2e/                 # End-to-end tests: pytest + Playwright (Python)
 ├── .github/workflows/       # CI (automated PR review)
 ├── .agent/                  # Prompt, schema and script used by the PR review
 └── user_stories*.md         # Requirements notes (in Polish)
@@ -20,6 +21,7 @@ A real-estate listings application organized as a **monorepo**: every deployable
 | --- | --- | --- | --- |
 | Backend | [`services/backend`](services/backend) | REST API for listings: FastAPI, async SQLAlchemy 2.0, SQLite, Alembic migrations | In development (`Location` CRUD implemented) |
 | Frontend | [`services/frontend`](services/frontend) | Web UI consuming the backend API (React + Vite) | In development (`Location` list/add/delete) |
+| E2E tests | [`services/e2e`](services/e2e) | Browser tests of the UI with pytest + Playwright (Python); starts backend and frontend itself | In development (auth and `Location` flows) |
 
 Each service is self-contained: it has its own dependencies, configuration, tests and README, and is run from its own directory. Services communicate only over HTTP – the frontend talks to the backend API (by default `http://127.0.0.1:8000`).
 
