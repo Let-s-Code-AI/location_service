@@ -1,5 +1,5 @@
-from sqlalchemy import select
-from fastapi import FastAPI, Depends
+from sqlalchemy import select, delete, func
+from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from sql_app.database import get_db
@@ -48,7 +48,33 @@ async def read_location(
     )
     location = result.scalar_one_or_none()
     if location is None:
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Location not found")
     return location
 
+
+@app.delete("/locations/{location_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_location(
+    location_id: int,
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(models.Location).where(models.Location.location_id == location_id)
+    )
+    if result.scalar_one_or_none() is None:
+        raise HTTPException(status_code=404, detail="Location not found")
+
+    listings_count = await db.scalar(
+        select(func.count())
+        .select_from(models.Listing)
+        .where(models.Listing.location_id == location_id)
+    )
+    if listings_count:
+        raise HTTPException(
+            status_code=409,
+            detail="Location is used by existing listings and cannot be deleted",
+        )
+
+    await db.execute(
+        delete(models.Location).where(models.Location.location_id == location_id)
+    )
+    await db.commit()
