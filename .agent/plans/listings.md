@@ -1,7 +1,5 @@
 # Plan: lista ogłoszeń (GET /listings/ + widok w UI)
 
-Baza: branch `feat/location-description`, HEAD `717b1fd`. Bramki na starcie zielone:
-`pytest -q` = 23 passed, `npm run build` = OK.
 
 **Zakres:** `services/backend/{main.py, sql_app/schemas.py, tests/api/}`, `services/frontend/src/`, `*.md`
 **Poza zakresem:** `alembic/`, `sql_app/models.py`, `.github/`, `.agent/` (poza tym plikiem), `package*.json`, `App.css`
@@ -103,7 +101,7 @@ export const listListings = () => request('/listings/')
 
 ```bash
 ALLOWED='^services/(backend/(main\.py|sql_app/schemas\.py|tests/api/)|frontend/src/)|\.md$'
-OUT=$(git diff --name-only 717b1fd...HEAD | grep -vE "$ALLOWED")
+OUT=$(git diff --name-only hash...HEAD | grep -vE "$ALLOWED")
 [ -z "$OUT" ] || { echo "Pliki poza zakresem:"; echo "$OUT"; exit 1; }
 ```
 
