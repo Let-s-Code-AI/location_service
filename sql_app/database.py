@@ -1,12 +1,11 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 
-# SQLite connection string
-SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///./sql_app.db"
+from sql_app.config import settings
 
 # Create async engine with check_same_thread=False for SQLite
 engine = create_async_engine(
-    SQLALCHEMY_DATABASE_URL,
+    settings.database_url,
     connect_args={"check_same_thread": False},
     echo=True  # Set to False in production
 )
