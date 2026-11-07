@@ -37,8 +37,11 @@ FRONTEND_PID=""
 cleanup() {
     echo ""
     info "Zatrzymywanie serwisów..."
-    [ -n "$FRONTEND_PID" ] && kill "$FRONTEND_PID" 2>/dev/null || true
-    [ -n "$BACKEND_PID" ]  && kill "$BACKEND_PID"  2>/dev/null || true
+    # Najpierw dzieci (np. worker uvicorn --reload), potem same procesy.
+    for pid in "$FRONTEND_PID" "$BACKEND_PID"; do
+        [ -n "$pid" ] && pkill -P "$pid" 2>/dev/null || true
+        [ -n "$pid" ] && kill "$pid" 2>/dev/null || true
+    done
     wait 2>/dev/null || true
     echo "👋 Do zobaczenia!"
 }
