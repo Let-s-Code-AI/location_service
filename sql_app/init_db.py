@@ -1,21 +1,26 @@
 """
-Skrypt do inicjalizacji bazy danych SQLite.
-Uruchom ten skrypt, aby utworzyć wszystkie tabele.
+Skrypt do inicjalizacji bazy danych.
+
+Schemat jest zarządzany przez Alembic (migracje w alembic/versions/),
+więc skrypt po prostu wykonuje `alembic upgrade head`.
+Bezpieczny do wielokrotnego uruchamiania - migracje, które już zostały
+zastosowane, są pomijane.
 """
-import asyncio
-from sql_app.database import Base, engine
-from sql_app import models
+from pathlib import Path
+
+from alembic import command
+from alembic.config import Config
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 
-async def init_db():
-    """Tworzy wszystkie tabele w bazie danych."""
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
-    await engine.dispose()
-    print("✅ Baza danych została zainicjalizowana!")
+def init_db() -> None:
+    """Stosuje wszystkie migracje Alembic do wersji head."""
+    alembic_cfg = Config(str(PROJECT_ROOT / "alembic.ini"))
+    alembic_cfg.set_main_option("script_location", str(PROJECT_ROOT / "alembic"))
+    command.upgrade(alembic_cfg, "head")
+    print("✅ Baza danych została zainicjalizowana (alembic upgrade head)!")
 
 
 if __name__ == "__main__":
-    asyncio.run(init_db())
-
+    init_db()
