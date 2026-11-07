@@ -20,8 +20,8 @@ echo "Aktualizacja pip..."
 pip install --upgrade pip
 
 # Instalacja zależności
-echo "Instalacja zależności z requirements.txt..."
-pip install -r requirements.txt
+echo "Instalacja zależności z pyproject.toml..."
+pip install -e .
 
 echo ""
 echo "✅ Konfiguracja zakończona!"
