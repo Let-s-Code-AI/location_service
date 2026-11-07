@@ -52,6 +52,27 @@ async def read_location(
     return location
 
 
+@app.patch("/locations/{location_id}", response_model=schemas.Location)
+async def update_location(
+    location_id: int,
+    location_update: schemas.LocationUpdate,
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(models.Location).where(models.Location.location_id == location_id)
+    )
+    location = result.scalar_one_or_none()
+    if location is None:
+        raise HTTPException(status_code=404, detail="Location not found")
+
+    for field, value in location_update.model_dump(exclude_unset=True).items():
+        setattr(location, field, value)
+
+    await db.commit()
+    await db.refresh(location)
+    return location
+
+
 @app.delete("/locations/{location_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_location(
     location_id: int,

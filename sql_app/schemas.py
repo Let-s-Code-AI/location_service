@@ -18,6 +18,10 @@ class LocationCreate(LocationBase):
     pass
 
 
+class LocationUpdate(LocationBase):
+    pass
+
+
 class Location(LocationBase):
     location_id: int
 
