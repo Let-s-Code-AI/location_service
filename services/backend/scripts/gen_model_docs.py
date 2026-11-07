@@ -1,11 +1,11 @@
-"""Generuje docs/models.md (katalog główny repo) na podstawie modeli SQLAlchemy.
+"""Generuje docs/schema.md (katalog główny repo) na podstawie modeli SQLAlchemy.
 
 Źródłem prawdy jest sql_app/models.py. Plik wynikowy jest w całości generowany,
 nie edytuj go ręcznie. Hook Claude Code (.claude/hooks/gen-model-docs.sh) uruchamia
 ten skrypt automatycznie po każdym zapisie sql_app/models.py.
 
 Użycie (z katalogu services/backend):
-    venv/bin/python scripts/gen_model_docs.py          # zapisuje docs/models.md
+    venv/bin/python scripts/gen_model_docs.py          # zapisuje docs/schema.md
     venv/bin/python scripts/gen_model_docs.py --check  # kod 1, gdy plik jest nieaktualny
 """
 from __future__ import annotations
@@ -16,7 +16,7 @@ from pathlib import Path
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = BACKEND_DIR.parents[1]
-DOCS_PATH = REPO_ROOT / "docs" / "models.md"
+DOCS_PATH = REPO_ROOT / "docs" / "schema.md"
 MODELS_REL = "services/backend/sql_app/models.py"
 
 # Import modeli ciągnie config.Settings, które czyta .env z bieżącego katalogu
