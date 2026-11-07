@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "properties": {
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "file": { "type": "string" },
+          "line": { "type": "integer" },
+          "description": { "type": "string" }
+        },
+        "required": ["file", "line", "description"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["findings"],
+  "additionalProperties": false
+}
