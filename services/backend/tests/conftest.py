@@ -1,4 +1,9 @@
 """Wspólne fixtures: baza SQLite in-memory + klient HTTP podpięty pod aplikację."""
+import os
+
+# Ustawienie przed importem aplikacji: config.Settings czyta SECRET_KEY przy imporcie.
+os.environ["SECRET_KEY"] = "test-secret-key-do-not-use-in-production"
+
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -42,3 +47,18 @@ async def client(engine):
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
         yield c
     app.dependency_overrides.clear()
+
+
+TEST_USER = {"email": "jan@example.com", "password": "haslo-testowe-123"}
+
+
+@pytest_asyncio.fixture
+async def auth_client(client):
+    """Klient z nagłówkiem Authorization dla zarejestrowanego i zalogowanego użytkownika."""
+    await client.post("/auth/register", json=TEST_USER)
+    response = await client.post(
+        "/auth/login",
+        data={"username": TEST_USER["email"], "password": TEST_USER["password"]},
+    )
+    client.headers["Authorization"] = f"Bearer {response.json()['access_token']}"
+    return client

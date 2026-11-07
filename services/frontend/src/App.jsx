@@ -1,9 +1,38 @@
 import { useEffect, useState } from 'react'
-import { listLocations, createLocation, deleteLocation } from './api.js'
+import {
+  AUTH_EXPIRED_EVENT,
+  clearToken,
+  createLocation,
+  deleteLocation,
+  getToken,
+  listLocations,
+} from './api.js'
+import Login from './Login.jsx'
 
 const EMPTY_FORM = { city: '', locality: '', city_district: '', street: '' }
 
 export default function App() {
+  const [authed, setAuthed] = useState(() => Boolean(getToken()))
+
+  useEffect(() => {
+    const onExpired = () => setAuthed(false)
+    window.addEventListener(AUTH_EXPIRED_EVENT, onExpired)
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, onExpired)
+  }, [])
+
+  if (!authed) {
+    return <Login onLoggedIn={() => setAuthed(true)} />
+  }
+
+  function handleLogout() {
+    clearToken()
+    setAuthed(false)
+  }
+
+  return <Locations onLogout={handleLogout} />
+}
+
+function Locations({ onLogout }) {
   const [locations, setLocations] = useState([])
   const [form, setForm] = useState(EMPTY_FORM)
   const [loading, setLoading] = useState(true)
@@ -62,7 +91,10 @@ export default function App() {
 
   return (
     <main>
-      <h1>Lokalizacje</h1>
+      <header>
+        <h1>Lokalizacje</h1>
+        <button type="button" onClick={onLogout}>Wyloguj</button>
+      </header>
 
       {error && <p className="error">{error}</p>}
 

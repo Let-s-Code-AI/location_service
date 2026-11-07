@@ -1,11 +1,49 @@
+import jwt
 from sqlalchemy import select, delete, func
 from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 from sql_app.database import get_db
 from sql_app import models, schemas
+from sql_app.security import (
+    create_access_token,
+    decode_access_token,
+    hash_password,
+    verify_password,
+)
 
 app = FastAPI()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+INVALID_CREDENTIALS = HTTPException(
+    status_code=status.HTTP_401_UNAUTHORIZED,
+    detail="Invalid credentials",
+    headers={"WWW-Authenticate": "Bearer"},
+)
+
+
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: AsyncSession = Depends(get_db),
+) -> models.User:
+    try:
+        user_id = decode_access_token(token)
+    except (jwt.PyJWTError, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    user = await db.get(models.User, user_id)
+    if user is None or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user
 
 
 @app.get("/")
@@ -13,11 +51,53 @@ async def root():
     return {"message": "API is running"}
 
 
+# Auth endpoints
+@app.post("/auth/register", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
+async def register(
+    data: schemas.UserCreate,
+    db: AsyncSession = Depends(get_db),
+):
+    existing = await db.execute(
+        select(models.User).where(models.User.email == data.email)
+    )
+    if existing.scalar_one_or_none() is not None:
+        raise HTTPException(status_code=409, detail="Email already registered")
+
+    user = models.User(email=data.email, password_hash=hash_password(data.password))
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+@app.post("/auth/login", response_model=schemas.Token)
+async def login(
+    form: OAuth2PasswordRequestForm = Depends(),
+    db: AsyncSession = Depends(get_db),
+):
+    # OAuth2PasswordRequestForm wymaga pola "username" — traktujemy je jako email.
+    result = await db.execute(
+        select(models.User).where(models.User.email == form.username)
+    )
+    user = result.scalar_one_or_none()
+    if user is None or not verify_password(form.password, user.password_hash):
+        raise INVALID_CREDENTIALS
+    if not user.is_active:
+        raise INVALID_CREDENTIALS
+    return schemas.Token(access_token=create_access_token(user.user_id))
+
+
+@app.get("/auth/me", response_model=schemas.User)
+async def read_me(current_user: models.User = Depends(get_current_user)):
+    return current_user
+
+
 # Location endpoints
 @app.post("/locations/", response_model=schemas.Location)
 async def create_location(
     location: schemas.LocationCreate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    _user: models.User = Depends(get_current_user),
 ):
     db_location = models.Location(**location.model_dump())
     db.add(db_location)
@@ -56,7 +136,8 @@ async def read_location(
 async def update_location(
     location_id: int,
     location_update: schemas.LocationUpdate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    _user: models.User = Depends(get_current_user),
 ):
     result = await db.execute(
         select(models.Location).where(models.Location.location_id == location_id)
@@ -76,7 +157,8 @@ async def update_location(
 @app.delete("/locations/{location_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_location(
     location_id: int,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    _user: models.User = Depends(get_current_user),
 ):
     result = await db.execute(
         select(models.Location).where(models.Location.location_id == location_id)

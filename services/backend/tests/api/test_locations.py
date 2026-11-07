@@ -3,8 +3,8 @@ from sql_app import models
 LOCATION = {"city": "Kraków", "street": "Floriańska", "latitude": 50.06, "longitude": 19.94}
 
 
-async def test_create_location(client):
-    response = await client.post("/locations/", json=LOCATION)
+async def test_create_location(auth_client):
+    response = await auth_client.post("/locations/", json=LOCATION)
 
     assert response.status_code == 200
     body = response.json()
@@ -12,26 +12,26 @@ async def test_create_location(client):
     assert body["city"] == "Kraków"
 
 
-async def test_read_locations_supports_pagination(client):
+async def test_read_locations_supports_pagination(auth_client):
     for i in range(3):
-        await client.post("/locations/", json={"city": f"Miasto {i}"})
+        await auth_client.post("/locations/", json={"city": f"Miasto {i}"})
 
-    response = await client.get("/locations/", params={"skip": 1, "limit": 1})
+    response = await auth_client.get("/locations/", params={"skip": 1, "limit": 1})
 
     assert response.status_code == 200
     assert [loc["city"] for loc in response.json()] == ["Miasto 1"]
 
 
-async def test_read_location_not_found(client):
-    response = await client.get("/locations/999")
+async def test_read_location_not_found(auth_client):
+    response = await auth_client.get("/locations/999")
 
     assert response.status_code == 404
 
 
-async def test_patch_updates_only_sent_fields(client):
-    created = (await client.post("/locations/", json=LOCATION)).json()
+async def test_patch_updates_only_sent_fields(auth_client):
+    created = (await auth_client.post("/locations/", json=LOCATION)).json()
 
-    response = await client.patch(
+    response = await auth_client.patch(
         f"/locations/{created['location_id']}", json={"street": "Grodzka"}
     )
 
@@ -41,16 +41,16 @@ async def test_patch_updates_only_sent_fields(client):
     assert body["city"] == "Kraków"  # pole spoza PATCH-a bez zmian
 
 
-async def test_delete_location(client):
-    created = (await client.post("/locations/", json=LOCATION)).json()
+async def test_delete_location(auth_client):
+    created = (await auth_client.post("/locations/", json=LOCATION)).json()
 
-    response = await client.delete(f"/locations/{created['location_id']}")
+    response = await auth_client.delete(f"/locations/{created['location_id']}")
 
     assert response.status_code == 204
-    assert (await client.get(f"/locations/{created['location_id']}")).status_code == 404
+    assert (await auth_client.get(f"/locations/{created['location_id']}")).status_code == 404
 
 
-async def test_delete_location_used_by_listing_returns_409(client, db):
+async def test_delete_location_used_by_listing_returns_409(auth_client, db):
     location = models.Location(city="Warszawa")
     building, owner, features = models.Building(), models.Owner(), models.Features()
     db.add_all([location, building, owner, features])
@@ -65,6 +65,6 @@ async def test_delete_location_used_by_listing_returns_409(client, db):
     )
     await db.commit()
 
-    response = await client.delete(f"/locations/{location.location_id}")
+    response = await auth_client.delete(f"/locations/{location.location_id}")
 
     assert response.status_code == 409

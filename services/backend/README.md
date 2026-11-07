@@ -42,6 +42,8 @@ cp .env.example .env
 | Variable | Default | Description |
 | --- | --- | --- |
 | `DATABASE_URL` | `sqlite+aiosqlite:///./sql_app.db` | Async SQLAlchemy connection URL |
+| `SECRET_KEY` | — (required) | Secret used to sign JWT tokens. Generate one, e.g. `python -c "import secrets; print(secrets.token_urlsafe(32))"` |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `60` | Lifetime of access tokens |
 
 Settings are loaded by `config.py` from environment variables or the `.env` file.
 
@@ -77,13 +79,34 @@ The API is available at <http://127.0.0.1:8000>. Interactive documentation is ge
 | Method | Path | Description | Responses |
 | --- | --- | --- | --- |
 | `GET` | `/` | Health check (`{"message": "API is running"}`) | `200` |
-| `POST` | `/locations/` | Create a location | `200` |
+| `POST` | `/auth/register` | Register a user (`email`, `password` min. 8 chars) | `201`, `409`, `422` |
+| `POST` | `/auth/login` | Log in (form data `username` = email, `password`); returns `access_token` | `200`, `401` |
+| `GET` | `/auth/me` | Current user (requires token) | `200`, `401` |
+| `POST` | `/locations/` | Create a location (auth required) | `200`, `401` |
 | `GET` | `/locations/` | List locations (`skip`, `limit` query params; defaults `0` and `100`) | `200` |
 | `GET` | `/locations/{location_id}` | Get a single location | `200`, `404` |
-| `PATCH` | `/locations/{location_id}` | Partially update a location (only the supplied fields change) | `200`, `404` |
-| `DELETE` | `/locations/{location_id}` | Delete a location | `204`, `404`, `409` |
+| `PATCH` | `/locations/{location_id}` | Partially update a location (auth required; only the supplied fields change) | `200`, `401`, `404` |
+| `DELETE` | `/locations/{location_id}` | Delete a location (auth required) | `204`, `401`, `404`, `409` |
 
 `DELETE` returns `409 Conflict` when the location is still referenced by one or more listings.
+
+### Authentication
+
+Write endpoints for locations require a JWT in the `Authorization: Bearer <token>` header. Get a token from `/auth/login`:
+
+```bash
+curl -X POST http://127.0.0.1:8000/auth/register -H "Content-Type: application/json" \
+  -d '{"email": "jan@example.com", "password": "haslo-12345"}'
+
+TOKEN=$(curl -s -X POST http://127.0.0.1:8000/auth/login \
+  -d 'username=jan@example.com&password=haslo-12345' | python3 -c 'import sys,json; print(json.load(sys.stdin)["access_token"])')
+
+curl -X POST http://127.0.0.1:8000/locations/ \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"city": "Warsaw"}'
+```
+
+Passwords are hashed with bcrypt. Tokens are HS256 JWTs valid for `ACCESS_TOKEN_EXPIRE_MINUTES`.
 
 ### Example
 
@@ -141,11 +164,12 @@ Alembic uses a synchronous engine, so `alembic/env.py` converts `sqlite+aiosqlit
 
 ```
 services/backend/
-├── main.py                  # FastAPI app and route handlers
+├── main.py                  # FastAPI app, route handlers, auth dependency
 ├── config.py                # Settings (pydantic-settings)
 ├── sql_app/
 │   ├── database.py          # Async engine, session factory, get_db dependency
 │   ├── models.py            # SQLAlchemy ORM models
+│   ├── security.py          # Password hashing (bcrypt) and JWT helpers
 │   ├── schemas.py           # Pydantic request/response schemas
 │   ├── init_db.py           # Runs `alembic upgrade head`
 │   └── schema.sql           # Reference SQL schema (not used at runtime)
@@ -165,4 +189,4 @@ services/backend/
 
 - `sql_app/database.py` creates the engine with `echo=True`, which logs every SQL statement. Turn it off before deploying to production.
 - Local database files (`*.db`) and `.env` are git-ignored.
-- No automated test suite is included yet.
+- Tests live in `tests/` and run with `pytest -q` (in-memory SQLite).

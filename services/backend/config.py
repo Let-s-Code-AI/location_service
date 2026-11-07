@@ -6,6 +6,11 @@ class Settings(BaseSettings):
 
     database_url: str = "sqlite+aiosqlite:///./sql_app.db"
 
+    # Klucz do podpisywania tokenów JWT. Brak domyślnej wartości celowo:
+    # aplikacja nie wystartuje bez ustawionego SECRET_KEY w .env lub środowisku.
+    secret_key: str
+    access_token_expire_minutes: int = 60
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

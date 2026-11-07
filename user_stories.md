@@ -1,25 +1,5 @@
 # User Stories
 
-## 1. Weryfikacja działania API
-
-**Jako** deweloper/system  
-**Chcę** sprawdzić czy API działa poprawnie  
-**Aby** upewnić się, że serwis jest dostępny
-
-**Akceptacja:**
-- Endpoint `GET /` zwraca status 200 i komunikat "Hello World"
-
----
-
-## 2. Sprawdzenie komunikacji z API
-
-**Jako** użytkownik API  
-**Chcę** otrzymać spersonalizowane powitanie  
-**Aby** zweryfikować, że API poprawnie przetwarza parametry ścieżki
-
-**Akceptacja:**
-- Endpoint `GET /hello/{name}` zwraca komunikat "Hello {name}" dla podanego parametru
-
 ---
 
 ## 3. Dodawanie nowej lokalizacji
