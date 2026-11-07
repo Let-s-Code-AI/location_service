@@ -2,17 +2,7 @@
 
 import uuid
 
-import pytest
 from playwright.sync_api import Locator, Page, expect
-
-# Znany błąd w aplikacji: frontend (App.jsx -> api.js) wysyła pola po polsku
-# (miasto, ulica, ...), a backend oczekuje city, street, ... Pola są ignorowane,
-# więc zapisuje się pusta lokalizacja ("Bez nazwy"). strict=True: po naprawie
-# test zacznie przechodzić i pytest zgłosi XPASS — wtedy zdejmij ten marker.
-KNOWN_FRONTEND_CONTRACT_BUG = pytest.mark.xfail(
-    strict=True,
-    reason="Frontend wysyła klucze miasto/ulica zamiast city/street (brak mapowania w App.jsx/api.js)",
-)
 
 
 def unique_city() -> str:
@@ -29,7 +19,6 @@ def add_location_through_ui(page: Page, city: str):
     page.get_by_role("button", name="Dodaj", exact=True).click()
 
 
-@KNOWN_FRONTEND_CONTRACT_BUG
 def test_added_location_appears_in_the_list(logged_in_page: Page):
     page = logged_in_page
     city = unique_city()
@@ -51,7 +40,6 @@ def test_city_is_required(logged_in_page: Page):
     expect(page.get_by_label("Miasto")).to_have_class("invalid")
 
 
-@KNOWN_FRONTEND_CONTRACT_BUG
 def test_location_with_street_is_marked_complete(logged_in_page: Page):
     page = logged_in_page
     city = unique_city()

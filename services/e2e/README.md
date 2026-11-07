@@ -57,14 +57,6 @@ services/e2e/
 
 Each test gets its own browser context (the `page` fixture from `pytest-playwright`), so the login token in `localStorage` never leaks between tests. Users are created with unique emails and cities with unique names, because the locations table is shared by all tests in a session.
 
-## Known issues
-
-Two tests are marked `xfail(strict=True)` and point at a bug in the application:
-
-- The frontend sends `miasto`, `dzielnica`, `ulica`… to `POST /locations/`, but the backend expects `city`, `city_district`, `street`… Unknown fields are ignored, so a location added in the UI is saved empty (shown as "Bez nazwy").
-
-When the bug is fixed, these tests pass and pytest reports them as `XPASS(strict)`. Remove the `@KNOWN_FRONTEND_CONTRACT_BUG` marker from `tests/test_locations.py` then.
-
 ## Conventions
 
 - Tests use the UI through accessible locators (`get_by_label`, `get_by_role`, `get_by_placeholder`). Keep them that way and avoid CSS class selectors unless there is no alternative.

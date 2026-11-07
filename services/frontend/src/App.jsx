@@ -30,6 +30,14 @@ const toRow = (l) => ({
   ulica: l.street ?? '',
 })
 
+// Odwrotność toRow: klucze formularza (PL) -> pola API (snake_case). Backend ignoruje nieznane pola.
+const API_FIELD = {
+  miasto: 'city',
+  miejscowosc: 'locality',
+  dzielnica: 'city_district',
+  ulica: 'street',
+}
+
 export default function App() {
   const [authed, setAuthed] = useState(() => Boolean(getToken()))
 
@@ -119,9 +127,9 @@ function Locations({ onLogout }) {
     e.preventDefault()
     // Wysyłamy tylko niepuste pola; reszta zostaje null w bazie.
     const data = Object.fromEntries(
-      FIELDS.map((f) => [f, form[f].trim()]).filter(([, v]) => v !== ''),
+      FIELDS.map((f) => [API_FIELD[f], form[f].trim()]).filter(([, v]) => v !== ''),
     )
-    if (!data.miasto) {
+    if (!data.city) {
       setCityError(true)
       setHint('Pole „Miasto” jest wymagane.')
       document.getElementById('miasto')?.focus()
