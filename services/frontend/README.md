@@ -1,5 +1,5 @@
 # Frontend
 
-Placeholder dla serwisu frontendowego. Technologia nie została jeszcze wybrana.
+Placeholder for the frontend service of the [monorepo](../../README.md). The technology has not been chosen yet.
 
-Backend (API) znajduje się w `../backend` i domyślnie działa pod `http://127.0.0.1:8000`.
+The backend API lives in [`../backend`](../backend) and runs by default at `http://127.0.0.1:8000` (interactive docs at `/docs`).
