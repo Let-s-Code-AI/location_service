@@ -23,6 +23,19 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/gen-model-docs.sh\"",
+            "timeout": 60,
+            "statusMessage": "Odświeżam docs/schema.md..."
+          }
+        ]
+      }
     ]
   }
 }
