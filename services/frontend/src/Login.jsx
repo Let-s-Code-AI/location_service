@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { login, register } from './api.js'
+import { Field, Icon } from './ui.jsx'
 
 // Formularz logowania; przełącza się w tryb rejestracji.
 export default function Login({ onLoggedIn }) {
@@ -33,41 +34,59 @@ export default function Login({ onLoggedIn }) {
   }
 
   return (
-    <main>
-      <h1>{isRegister ? 'Rejestracja' : 'Logowanie'}</h1>
+    <div className="container narrow">
+      <header className="page-header">
+        <div>
+          <div className="eyebrow">Konto</div>
+          <h1>{isRegister ? 'Rejestracja' : 'Logowanie'}</h1>
+          <p className="subtitle">
+            {isRegister ? 'Załóż konto, aby zarządzać lokalizacjami.' : 'Zaloguj się, aby zarządzać lokalizacjami.'}
+          </p>
+        </div>
+      </header>
 
-      {error && <p className="error">{error}</p>}
+      {error && (
+        <div className="alert" role="alert">
+          {error}
+        </div>
+      )}
 
-      <form onSubmit={handleSubmit}>
-        <label>
-          Email
-          <input
-            type="email"
-            autoComplete="username"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </label>
-        <label>
-          Hasło
-          <input
-            type="password"
-            autoComplete={isRegister ? 'new-password' : 'current-password'}
-            required
-            minLength={isRegister ? 8 : undefined}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </label>
-        <button type="submit" disabled={busy}>
-          {isRegister ? 'Zarejestruj się' : 'Zaloguj'}
-        </button>
-      </form>
+      <section className="card auth-card">
+        <div className="card-body">
+          <form onSubmit={handleSubmit} className="stack">
+            <Field
+              id="email"
+              label="Email"
+              type="email"
+              icon="mail"
+              autoComplete="username"
+              required
+              placeholder="np. jan@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <Field
+              id="password"
+              label="Hasło"
+              type="password"
+              icon="lock"
+              autoComplete={isRegister ? 'new-password' : 'current-password'}
+              required
+              minLength={isRegister ? 8 : undefined}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
+              {isRegister ? 'Zarejestruj się' : 'Zaloguj'}
+            </button>
+          </form>
+        </div>
+      </section>
 
-      <p>
+      <p className="switch">
         <button
           type="button"
+          className="btn btn-ghost"
           onClick={() => {
             setError(null)
             setMode(isRegister ? 'login' : 'register')
@@ -76,6 +95,6 @@ export default function Login({ onLoggedIn }) {
           {isRegister ? 'Mam już konto' : 'Nie mam konta'}
         </button>
       </p>
-    </main>
+    </div>
   )
 }
