@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Async FastAPI + SQLAlchemy 2.0 (aiosqlite) REST API for a Polish real-estate listings database. Python >= 3.11. Project docs (`user_stories*.md`) and code comments are largely in Polish. Tests live in `tests/` (pytest); no linter is configured.
+Backend service (`services/backend/`) of a Polish real-estate listings app: async FastAPI + SQLAlchemy 2.0 (aiosqlite) REST API. The frontend lives separately in `services/frontend/`. Python >= 3.11. Project docs (`user_stories*.md`, in the repo root) and code comments are largely in Polish. Tests live in `tests/` (pytest); no linter is configured.
 
 ## Commands
 
@@ -21,7 +21,7 @@ alembic upgrade head
 alembic downgrade -1
 ```
 
-Run these from the repo root — `alembic.ini` and the default SQLite URL (`./sql_app.db`) are relative to it.
+Run these from `services/backend/` — `alembic.ini` and the default SQLite URL (`./sql_app.db`) are relative to it.
 
 ## Architecture
 
@@ -39,4 +39,4 @@ Alembic is the source of truth for the schema (`alembic/versions/`). `sql_app/in
 
 ## CI
 
-`.github/workflows/agent-review.yml` runs an automated PR review with OpenAI Codex CLI using `.agent/review-prompt.md`, `.agent/review-schema.json` and `.agent/post-review-comment.js`. The review prompt specifically looks for missing Alembic migrations, API-contract breaks, and bad queries, so model changes should ship with a migration.
+`.github/workflows/agent-review.yml` (in the repo root) runs an automated PR review with OpenAI Codex CLI using the repo-root `.agent/review-prompt.md`, `.agent/review-schema.json` and `.agent/post-review-comment.js`. The review prompt specifically looks for missing Alembic migrations, API-contract breaks, and bad queries, so model changes should ship with a migration.
