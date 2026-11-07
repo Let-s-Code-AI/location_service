@@ -1,7 +1,7 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 
-from sql_app.config import settings
+from config import settings
 
 # Create async engine with check_same_thread=False for SQLite
 engine = create_async_engine(
