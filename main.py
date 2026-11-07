@@ -1,3 +1,4 @@
+from sqlalchemy import select
 from fastapi import FastAPI, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
@@ -37,7 +38,7 @@ async def read_locations(
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(
-        models.Location.__table__.select().offset(skip).limit(limit)
+        select(models.Location).offset(skip).limit(limit)
     )
     return result.scalars().all()
 
@@ -48,7 +49,7 @@ async def read_location(
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(
-        models.Location.__table__.select().where(models.Location.location_id == location_id)
+        select(models.Location).where(models.Location.location_id == location_id)
     )
     location = result.scalar_one_or_none()
     if location is None:

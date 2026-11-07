@@ -5,6 +5,7 @@ Uruchom ten skrypt, aby utworzyć wszystkie tabele.
 import asyncio
 from sqlalchemy.ext.asyncio import create_async_engine
 from sql_app.database import Base
+from sql_app import models 
 
 SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///./sql_app.db"
 

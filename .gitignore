@@ -1,0 +1,41 @@
+# Wirtualne środowisko (tworzone przez setup.sh)
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Dane lokalne / baza SQLite
+*.db
+*.sqlite
+*.sqlite3
+sql_app.db
+
+# Pliki SQL (schematy, zrzuty)
+*.sql
+
+# Sekrety i zmienne środowiskowe
+.env
+.env.*
+!.env.example
+
+# Narzędzia testowe / pokrycie kodu
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Pakowanie / build
+build/
+dist/
+*.egg-info/
+
+# Edytory i system
+.idea/
+.vscode/
+*.swp
+.DS_Store
