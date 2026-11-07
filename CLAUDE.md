@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Async FastAPI + SQLAlchemy 2.0 (aiosqlite) REST API for a Polish real-estate listings database. Python >= 3.11. Project docs (`user_stories*.md`) and code comments are largely in Polish. There is currently no test suite and no linter configured.
+Async FastAPI + SQLAlchemy 2.0 (aiosqlite) REST API for a Polish real-estate listings database. Python >= 3.11. Project docs (`user_stories*.md`) and code comments are largely in Polish. Tests live in `tests/` (pytest); no linter is configured.
 
 ## Commands
 
@@ -13,6 +13,8 @@ Async FastAPI + SQLAlchemy 2.0 (aiosqlite) REST API for a Polish real-estate lis
 source venv/bin/activate
 python -m sql_app.init_db        # create/upgrade DB: runs `alembic upgrade head`
 uvicorn main:app --reload        # run the API (docs at /docs)
+pip install -e ".[dev]"          # test deps: pytest, pytest-asyncio, httpx
+pytest -q                        # run tests (in-memory SQLite, see tests/conftest.py)
 
 alembic revision --autogenerate -m "message"   # generate a migration after changing sql_app/models.py
 alembic upgrade head
