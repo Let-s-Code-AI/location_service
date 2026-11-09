@@ -119,6 +119,25 @@ class ListingDetail(Listing):
     features: Optional[Features] = None
 
 
+# Skrócone schematy do listy/wyszukiwarki ogłoszeń (bez opisu, URL-i i FK).
+class LocationSummary(BaseModel):
+    city: Optional[str] = None
+    city_district: Optional[str] = None
+    street: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ListingSummary(BaseModel):
+    listing_id: int
+    rooms: Optional[int] = None
+    area: Optional[float] = None
+    price_total_zl: Optional[float] = None
+    location: LocationSummary
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 
 # Auth schemas
 class UserCreate(BaseModel):
