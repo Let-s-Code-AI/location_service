@@ -227,6 +227,42 @@ h1 {
   box-shadow: 0 0 0 4px rgba(210, 59, 59, 0.1);
 }
 
+.input-wrap input.no-icon {
+  padding-left: 12px;
+}
+
+/* Lista podpowiedzi pod polem Autocomplete */
+.suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+
+.suggestions li {
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.suggestions li:hover,
+.suggestions li[aria-selected='true'] {
+  background: var(--primary-50);
+  color: var(--primary-600);
+}
+
 .hint {
   font-size: 12px;
   color: var(--danger);
@@ -563,6 +599,86 @@ tbody tr.leave {
   pointer-events: auto;
 }
 
+/* Panel filtrów ofert */
+.filters-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.filters-count {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.filters-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.filter-group {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.filter-search {
+  grid-column: 1 / -1;
+}
+
+.filter-group legend,
+.filter-group > label {
+  display: block;
+  font-size: 13px;
+  font-weight: 550;
+  margin-bottom: 6px;
+  color: #3a4256;
+}
+
+.range-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.room-chips {
+  display: flex;
+  gap: 8px;
+}
+
+.room-chip {
+  position: relative;
+}
+
+.room-chip input {
+  position: absolute;
+  opacity: 0;
+}
+
+.room-chip span {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.room-chip input:checked + span {
+  background: var(--primary-50);
+  border-color: var(--primary);
+  color: var(--primary-600);
+  font-weight: 600;
+}
+
+.room-chip input:focus-visible + span {
+  box-shadow: 0 0 0 4px rgba(36, 87, 197, 0.12);
+}
+
 /* Responsive */
 @media (max-width: 880px) {
   .form-grid {
@@ -570,6 +686,9 @@ tbody tr.leave {
   }
   .form-grid .btn {
     grid-column: 1 / -1;
+  }
+  .filters-grid {
+    grid-template-columns: 1fr;
   }
   .stats {
     grid-template-columns: 1fr;

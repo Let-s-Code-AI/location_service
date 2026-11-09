@@ -7,7 +7,7 @@ import {
   getToken,
   listLocations,
 } from './api.js'
-import Listings from './Listings.jsx'
+import ListingsView from './ListingsView.jsx'
 import Login from './Login.jsx'
 import { Field, Icon } from './ui.jsx'
 
@@ -62,7 +62,7 @@ export default function App() {
     <div className="toolbar">
       {[
         ['locations', 'Lokalizacje'],
-        ['listings', 'Ogłoszenia'],
+        ['listings', 'Oferty'],
       ].map(([key, label]) => (
         <button
           key={key}
@@ -80,7 +80,7 @@ export default function App() {
     </div>
   )
 
-  return view === 'listings' ? <Listings actions={actions} /> : <Locations actions={actions} />
+  return view === 'listings' ? <ListingsView actions={actions} /> : <Locations actions={actions} />
 }
 
 function Locations({ actions }) {

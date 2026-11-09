@@ -1,10 +1,12 @@
+import math
+
 import jwt
-from sqlalchemy import select, delete, func, or_
-from sqlalchemy.orm import selectinload
+from sqlalchemy import select, delete, distinct, func, or_
 from fastapi import FastAPI, Depends, HTTPException, Query, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List, Optional
+from sqlalchemy.orm import selectinload
+from typing import List, Literal, Optional
 from sql_app.database import get_db
 from sql_app import models, schemas
 from sql_app.security import (
@@ -91,6 +93,129 @@ async def login(
 @app.get("/auth/me", response_model=schemas.User)
 async def read_me(current_user: models.User = Depends(get_current_user)):
     return current_user
+
+
+# Listing endpoints
+def _range_conditions(column, name: str, low: Optional[float], high: Optional[float]) -> list:
+    for value in (low, high):
+        if value is not None and not math.isfinite(value):
+            raise HTTPException(status_code=422, detail=f"{name} musi być skończoną liczbą")
+    if low is not None and high is not None and low > high:
+        raise HTTPException(
+            status_code=422, detail=f"{name}_min nie może być większe niż {name}_max"
+        )
+    conditions = []
+    if low is not None:
+        conditions.append(column >= low)
+    if high is not None:
+        conditions.append(column <= high)
+    return conditions
+
+
+def _escape_like(value: str) -> str:
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+def listing_filters(
+    q: Optional[str] = Query(None, max_length=100),
+    price_total_min: Optional[float] = Query(None, ge=0),
+    price_total_max: Optional[float] = Query(None, ge=0),
+    price_sqm_min: Optional[float] = Query(None, ge=0),
+    price_sqm_max: Optional[float] = Query(None, ge=0),
+    area_min: Optional[float] = Query(None, ge=0),
+    area_max: Optional[float] = Query(None, ge=0),
+    rooms: List[int] = Query([]),
+    city: Optional[str] = Query(None, max_length=255),
+    city_district: Optional[str] = Query(None, max_length=255),
+) -> list:
+    """Builds SQL conditions for GET /listings/. A NULL in a filtered column excludes the row."""
+    if any(r < 1 for r in rooms):
+        raise HTTPException(status_code=422, detail="rooms musi być liczbą większą od 0")
+    conditions = [
+        *_range_conditions(models.Listing.price_total_zl, "price_total", price_total_min, price_total_max),
+        *_range_conditions(models.Listing.price_sqm_zl, "price_sqm", price_sqm_min, price_sqm_max),
+        *_range_conditions(models.Listing.area, "area", area_min, area_max),
+    ]
+    if rooms:
+        conditions.append(models.Listing.rooms.in_(rooms))
+    # Free-text phrase matched as a substring of city, locality, district or street.
+    # Note: SQLite LIKE is case-insensitive only for ASCII, so "łódź" won't match "Łódź".
+    if q and q.strip():
+        pattern = f"%{_escape_like(q.strip())}%"
+        conditions.append(
+            models.Listing.location.has(
+                or_(
+                    *(
+                        column.ilike(pattern, escape="\\")
+                        for column in (
+                            models.Location.city,
+                            models.Location.locality,
+                            models.Location.city_district,
+                            models.Location.street,
+                        )
+                    )
+                )
+            )
+        )
+    # Exact match: values come from /listings/suggestions. `has()` renders as EXISTS,
+    # so the same condition works in both the rows and the COUNT query without a join.
+    if city is not None:
+        conditions.append(models.Listing.location.has(models.Location.city == city))
+    if city_district is not None:
+        conditions.append(
+            models.Listing.location.has(models.Location.city_district == city_district)
+        )
+    return conditions
+
+
+@app.get("/listings/", response_model=schemas.ListingPage)
+async def read_listings(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=500),
+    conditions: list = Depends(listing_filters),
+    db: AsyncSession = Depends(get_db),
+):
+    # One list of conditions shared by the rows query and the count query,
+    # so `total` always reflects exactly the same filters as `items`.
+
+    total = await db.scalar(
+        select(func.count()).select_from(models.Listing).where(*conditions)
+    )
+    result = await db.execute(
+        select(models.Listing)
+        .options(selectinload(models.Listing.location))
+        .where(*conditions)
+        .order_by(models.Listing.listing_id)
+        .offset(skip)
+        .limit(limit)
+    )
+    return schemas.ListingPage(
+        items=result.scalars().all(), total=total, skip=skip, limit=limit
+    )
+
+
+# Declared before any future /listings/{listing_id}, so "suggestions" never hits the path param.
+@app.get("/listings/suggestions", response_model=List[str])
+async def suggest_listing_values(
+    field: Literal["city", "city_district"],
+    q: str = Query("", max_length=100),
+    city: Optional[str] = Query(None, max_length=255),
+    limit: int = Query(10, ge=1, le=50),
+    db: AsyncSession = Depends(get_db),
+):
+    """Prefix suggestions for city / city_district, only from locations that have listings."""
+    column = getattr(models.Location, field)
+    query = (
+        select(distinct(column))
+        .join(models.Listing, models.Listing.location_id == models.Location.location_id)
+        .where(column.is_not(None), column.like(f"{_escape_like(q)}%", escape="\\"))
+        .order_by(column)
+        .limit(limit)
+    )
+    if city is not None and field == "city_district":
+        query = query.where(models.Location.city == city)
+    result = await db.execute(query)
+    return result.scalars().all()
 
 
 # Location endpoints
@@ -182,54 +307,3 @@ async def delete_location(
         delete(models.Location).where(models.Location.location_id == location_id)
     )
     await db.commit()
-
-
-@app.get("/listings/", response_model=List[schemas.ListingSummary])
-async def search_listings(
-    q: Optional[str] = Query(None, max_length=100),
-    price_min: Optional[float] = Query(None, ge=0),
-    price_max: Optional[float] = Query(None, ge=0),
-    rooms_min: Optional[int] = Query(None, ge=1),
-    area_min: Optional[float] = Query(None, ge=0),
-    area_max: Optional[float] = Query(None, ge=0),
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=500),
-    db: AsyncSession = Depends(get_db),
-):
-    """Lista ogłoszeń z filtrami wyszukiwarki.
-
-    `q` szuka fragmentu w mieście, miejscowości, dzielnicy i ulicy (LIKE).
-    Uwaga: w SQLite LIKE ignoruje wielkość liter tylko dla ASCII,
-    więc „łódź” nie znajdzie „Łódź”.
-    """
-    if price_min is not None and price_max is not None and price_min > price_max:
-        raise HTTPException(status_code=422, detail="price_min nie może być większe niż price_max")
-    if area_min is not None and area_max is not None and area_min > area_max:
-        raise HTTPException(status_code=422, detail="area_min nie może być większe niż area_max")
-
-    Listing, Location = models.Listing, models.Location
-    stmt = select(Listing).join(Listing.location).options(selectinload(Listing.location))
-
-    if q and q.strip():
-        pattern = f"%{q.strip()}%"
-        stmt = stmt.where(
-            or_(
-                Location.city.ilike(pattern),
-                Location.locality.ilike(pattern),
-                Location.city_district.ilike(pattern),
-                Location.street.ilike(pattern),
-            )
-        )
-    if price_min is not None:
-        stmt = stmt.where(Listing.price_total_zl >= price_min)
-    if price_max is not None:
-        stmt = stmt.where(Listing.price_total_zl <= price_max)
-    if rooms_min is not None:
-        stmt = stmt.where(Listing.rooms >= rooms_min)
-    if area_min is not None:
-        stmt = stmt.where(Listing.area >= area_min)
-    if area_max is not None:
-        stmt = stmt.where(Listing.area <= area_max)
-
-    result = await db.execute(stmt.order_by(Listing.listing_id).offset(skip).limit(limit))
-    return result.scalars().all()

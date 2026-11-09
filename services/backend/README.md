@@ -4,7 +4,7 @@ This is the backend service (`services/backend/`). Run all commands below from t
 
 A real-estate listings API built with **FastAPI**, **SQLAlchemy (async)** and **SQLite**, with schema migrations managed by **Alembic**.
 
-> **Status:** early development. Only the `Location` resource has full CRUD endpoints. The remaining models (`Building`, `Owner`, `Features`, `Listing`) are defined in the database layer and Pydantic schemas, but have no API endpoints yet.
+> **Status:** early development. `Location` has full CRUD endpoints; `Listing` can be listed with filters and a result count (read-only). The remaining models (`Building`, `Owner`, `Features`) are defined in the database layer and Pydantic schemas, but have no API endpoints yet.
 
 ## Tech stack
 
@@ -87,9 +87,37 @@ The API is available at <http://127.0.0.1:8000>. Interactive documentation is ge
 | `GET` | `/locations/{location_id}` | Get a single location | `200`, `404` |
 | `PATCH` | `/locations/{location_id}` | Partially update a location (auth required; only the supplied fields change) | `200`, `401`, `404` |
 | `DELETE` | `/locations/{location_id}` | Delete a location (auth required) | `204`, `401`, `404`, `409` |
-| `GET` | `/listings/` | Search listings (see below) | `200`, `422` |
+| `GET` | `/listings/` | List listings with filters (see below); returns `{items, total, skip, limit}` | `200`, `422` |
+| `GET` | `/listings/suggestions` | Autocomplete for `city` / `city_district` (`field`, `q` prefix, optional `city`, `limit` 1–50, default `10`) | `200`, `422` |
 
 `DELETE` returns `409 Conflict` when the location is still referenced by one or more listings.
+
+### Listing filters
+
+`GET /listings/` is public and accepts `skip` (default `0`), `limit` (default `50`, max `500`) and any combination of:
+
+| Parameter | Meaning |
+| --- | --- |
+| `q` | Substring of city, locality, district or street (max 100 chars) |
+| `price_total_min`, `price_total_max` | Total price in zł (inclusive) |
+| `price_sqm_min`, `price_sqm_max` | Price per m² in zł (inclusive) |
+| `area_min`, `area_max` | Area in m² (inclusive) |
+| `rooms` | Number of rooms; repeat for several values (`rooms=2&rooms=3`) |
+| `city`, `city_district` | Exact match on the listing's location |
+
+Ranges must be non-negative and finite, with min ≤ max, otherwise the API returns `422` with a message in `detail`. A listing with an empty (`NULL`) value in a filtered field is excluded only while that filter is active. `total` is the number of listings matching the filters, regardless of `skip`/`limit`. Each item contains `listing_id`, `rooms`, `area`, `price_total_zl`, `price_sqm_zl` and `location` (`city`, `city_district`, `street`).
+
+SQLite `LIKE` is case-insensitive only for ASCII, so `q=łódź` does not match `Łódź`. There is no `POST /listings/` yet. To get sample data locally, run `venv/bin/python scripts/seed_listings.py` (it does nothing when the table is not empty).
+
+`GET /listings/suggestions` returns a sorted list of distinct values that start with `q`, taken only from locations that have at least one listing; with `field=city_district`, `city` narrows the districts to one city. The match is case-insensitive only for ASCII letters (SQLite `LIKE`).
+
+```bash
+# 2- and 3-room flats in Kraków between 400k and 700k zł
+curl "http://127.0.0.1:8000/listings/?city=Krak%C3%B3w&rooms=2&rooms=3&price_total_min=400000&price_total_max=700000"
+
+# District suggestions in Kraków starting with "Pod"
+curl "http://127.0.0.1:8000/listings/suggestions?field=city_district&q=Pod&city=Krak%C3%B3w"
+```
 
 ### Authentication
 
@@ -130,26 +158,6 @@ curl -X DELETE http://127.0.0.1:8000/locations/1
 ```
 
 All `Location` fields (`city`, `locality`, `city_district`, `street`, `full_address`, `latitude`, `longitude`) are optional.
-
-### Listing search
-
-`GET /listings/` is public and returns a short summary (`listing_id`, `rooms`, `area`, `price_total_zl`, `location: {city, city_district, street}`), ordered by `listing_id`. All query params are optional:
-
-| Param | Meaning |
-| --- | --- |
-| `q` | Substring of city, locality, district or street (max 100 chars) |
-| `price_min`, `price_max` | Range of `price_total_zl` (`422` when min > max) |
-| `rooms_min` | Minimum number of rooms |
-| `area_min`, `area_max` | Range of `area` in m² (`422` when min > max) |
-| `skip`, `limit` | Pagination; `limit` is 1–500, default 100 |
-
-```bash
-curl "http://127.0.0.1:8000/listings/?q=Mokot&price_max=1000000&rooms_min=2"
-```
-
-SQLite `LIKE` is case-insensitive only for ASCII, so `q=łódź` does not match `Łódź`.
-
-There is no `POST /listings/` yet. To get sample data locally, run `venv/bin/python scripts/seed_listings.py` (it does nothing when the table is not empty).
 
 ## Data model
 

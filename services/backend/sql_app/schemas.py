@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from datetime import date
-from typing import Optional
+from typing import List, Optional
 
 
 # Location schemas
@@ -119,7 +119,7 @@ class ListingDetail(Listing):
     features: Optional[Features] = None
 
 
-# Skrócone schematy do listy/wyszukiwarki ogłoszeń (bez opisu, URL-i i FK).
+# Short schemas for the listings list (no description, URLs or FKs).
 class LocationSummary(BaseModel):
     city: Optional[str] = None
     city_district: Optional[str] = None
@@ -133,10 +133,17 @@ class ListingSummary(BaseModel):
     rooms: Optional[int] = None
     area: Optional[float] = None
     price_total_zl: Optional[float] = None
+    price_sqm_zl: Optional[float] = None
     location: LocationSummary
 
     model_config = ConfigDict(from_attributes=True)
 
+
+class ListingPage(BaseModel):
+    items: List[ListingSummary]
+    total: int  # count after filters, independent of skip/limit
+    skip: int
+    limit: int
 
 
 # Auth schemas

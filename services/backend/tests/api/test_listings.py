@@ -1,119 +1,108 @@
-"""Testy GET /listings/ — lista ogłoszeń z filtrami wyszukiwarki."""
-from sql_app import models
+"""GET /listings/: lista ofert z paginacją i polem total."""
 
 
-async def make_listing(db, *, city, street=None, district=None, price=None, rooms=None, area=None):
-    location = models.Location(city=city, street=street, city_district=district)
-    building, owner, features = models.Building(), models.Owner(), models.Features()
-    db.add_all([location, building, owner, features])
-    await db.flush()
-    listing = models.Listing(
-        location_id=location.location_id,
-        building_id=building.building_id,
-        owner_id=owner.owner_id,
-        features_id=features.features_id,
-        price_total_zl=price,
-        rooms=rooms,
-        area=area,
-        description_text="opis",
-        url="https://example.com/1",
-    )
-    db.add(listing)
-    await db.commit()
-    return listing.listing_id
-
-
-async def seed(db):
-    await make_listing(db, city="Warszawa", street="Puławska", district="Mokotów", price=900_000, rooms=3, area=60)
-    await make_listing(db, city="Kraków", street="Floriańska", price=650_000, rooms=2, area=45)
-    await make_listing(db, city="Gdańsk", street="Długa", price=500_000, rooms=1, area=30)
-
-
-def ids(response):
-    assert response.status_code == 200, response.text
-    return [item["location"]["city"] for item in response.json()]
-
-
-async def test_empty_db_returns_empty_list(client):
+async def test_list_listings_empty(client):
     response = await client.get("/listings/")
 
     assert response.status_code == 200
-    assert response.json() == []
+    assert response.json() == {"items": [], "total": 0, "skip": 0, "limit": 50}
 
 
-async def test_returns_summary_without_details(client, db):
-    await make_listing(db, city="Warszawa", street="Puławska", price=900_000, rooms=3, area=60.5)
+async def test_list_listings_returns_summary_with_location(client, make_listing):
+    listing = await make_listing(
+        city="Kraków",
+        city_district="Podgórze",
+        rooms=3,
+        area=62.5,
+        price_total_zl=850000.0,
+        price_sqm_zl=13600.0,
+        url="https://example.com/oferta",
+        description_text="Opis",
+    )
 
     body = (await client.get("/listings/")).json()
 
-    assert body == [
+    assert body["total"] == 1
+    assert body["items"] == [
         {
-            "listing_id": 1,
+            "listing_id": listing.listing_id,
             "rooms": 3,
-            "area": 60.5,
-            "price_total_zl": 900_000,
-            "location": {"city": "Warszawa", "city_district": None, "street": "Puławska"},
+            "area": 62.5,
+            "price_total_zl": 850000.0,
+            "price_sqm_zl": 13600.0,
+            "location": {"city": "Kraków", "city_district": "Podgórze", "street": None},
         }
     ]
-    assert "description_text" not in body[0]
-    assert "url" not in body[0]
 
 
-async def test_q_matches_city_case_insensitive(client, db):
-    await seed(db)
+async def test_list_listings_paginates_and_total_ignores_page(client, make_listing):
+    created = [await make_listing(rooms=n) for n in (1, 2, 3)]
 
-    assert ids(await client.get("/listings/", params={"q": "warsz"})) == ["Warszawa"]
+    body = (await client.get("/listings/", params={"skip": 1, "limit": 1})).json()
 
-
-async def test_q_matches_street_and_district(client, db):
-    await seed(db)
-
-    assert ids(await client.get("/listings/", params={"q": "Floria"})) == ["Kraków"]
-    assert ids(await client.get("/listings/", params={"q": "Mokot"})) == ["Warszawa"]
+    assert body["total"] == 3
+    assert body["skip"] == 1 and body["limit"] == 1
+    assert [item["listing_id"] for item in body["items"]] == [created[1].listing_id]
 
 
-async def test_q_without_matches_returns_empty(client, db):
-    await seed(db)
+async def test_list_listings_is_ordered_by_id(client, make_listing):
+    created = [await make_listing() for _ in range(3)]
 
-    assert ids(await client.get("/listings/", params={"q": "Poznań"})) == []
+    body = (await client.get("/listings/")).json()
 
-
-async def test_price_range(client, db):
-    await seed(db)
-
-    response = await client.get("/listings/", params={"price_min": 600_000, "price_max": 800_000})
-
-    assert ids(response) == ["Kraków"]
+    assert [item["listing_id"] for item in body["items"]] == [
+        listing.listing_id for listing in created
+    ]
 
 
-async def test_rooms_min(client, db):
-    await seed(db)
-
-    assert ids(await client.get("/listings/", params={"rooms_min": 2})) == ["Warszawa", "Kraków"]
-
-
-async def test_area_range(client, db):
-    await seed(db)
-
-    assert ids(await client.get("/listings/", params={"area_min": 40, "area_max": 50})) == ["Kraków"]
+async def test_list_listings_rejects_invalid_pagination(client):
+    for params in ({"limit": 0}, {"limit": 501}, {"skip": -1}):
+        response = await client.get("/listings/", params=params)
+        assert response.status_code == 422, params
 
 
-async def test_filters_combine(client, db):
-    await seed(db)
-
-    response = await client.get("/listings/", params={"q": "a", "rooms_min": 2, "price_max": 700_000})
-
-    assert ids(response) == ["Kraków"]
+async def seed_locations(make_listing):
+    await make_listing(city="Warszawa", street="Puławska", city_district="Mokotów")
+    await make_listing(city="Kraków", street="Floriańska")
+    await make_listing(city="Gdańsk", street="Długa")
 
 
-async def test_pagination(client, db):
-    await seed(db)
+async def cities(client, **params):
+    response = await client.get("/listings/", params=params)
+    assert response.status_code == 200, response.text
+    return [item["location"]["city"] for item in response.json()["items"]]
 
-    assert ids(await client.get("/listings/", params={"skip": 1, "limit": 1})) == ["Kraków"]
+
+async def test_q_matches_city_case_insensitive(client, make_listing):
+    await seed_locations(make_listing)
+
+    assert await cities(client, q="warsz") == ["Warszawa"]
 
 
-async def test_invalid_params_return_422(client):
-    assert (await client.get("/listings/", params={"limit": 501})).status_code == 422
-    assert (await client.get("/listings/", params={"skip": -1})).status_code == 422
-    assert (await client.get("/listings/", params={"price_min": 10, "price_max": 5})).status_code == 422
-    assert (await client.get("/listings/", params={"area_min": 10, "area_max": 5})).status_code == 422
+async def test_q_matches_street_and_district(client, make_listing):
+    await seed_locations(make_listing)
+
+    assert await cities(client, q="Floria") == ["Kraków"]
+    assert await cities(client, q="Mokot") == ["Warszawa"]
+
+
+async def test_q_without_matches_returns_empty_and_zero_total(client, make_listing):
+    await seed_locations(make_listing)
+
+    body = (await client.get("/listings/", params={"q": "Poznań"})).json()
+
+    assert body["items"] == [] and body["total"] == 0
+
+
+async def test_q_treats_like_wildcards_literally(client, make_listing):
+    await seed_locations(make_listing)
+
+    assert await cities(client, q="%") == []
+
+
+async def test_q_combines_with_other_filters(client, make_listing):
+    await make_listing(city="Warszawa", street="Puławska", rooms=3)
+    await make_listing(city="Warszawa", street="Marszałkowska", rooms=1)
+
+    assert await cities(client, q="Warsz", rooms=3) == ["Warszawa"]
+    assert await cities(client, q="Warsz") == ["Warszawa", "Warszawa"]

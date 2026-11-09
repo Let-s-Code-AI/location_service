@@ -35,6 +35,17 @@
             "statusMessage": "Odświeżam docs/schema.md..."
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR/.claude/hooks/format.sh\"",
+            "timeout": 30,
+            "statusMessage": "Formatuję plik Python..."
+          }
+        ]
       }
     ]
   }

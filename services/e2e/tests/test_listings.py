@@ -1,4 +1,4 @@
-"""E2E: wyszukiwarka ogłoszeń (widok „Ogłoszenia”).
+"""E2E: wyszukiwarka ofert (widok „Oferty”).
 
 Backend nie ma POST /listings/, więc dane wstawiamy bezpośrednio do bazy SQLite
 backendu E2E. Każdy test używa unikalnej nazwy miasta, bo baza jest wspólna dla sesji.
@@ -34,8 +34,8 @@ def add_listing(app_base_url, e2e_db_file):
 
 
 def open_listings(page: Page) -> Page:
-    page.get_by_role("button", name="Ogłoszenia").click()
-    page.get_by_role("heading", name="Ogłoszenia", level=1).wait_for()
+    page.get_by_role("button", name="Oferty").click()
+    page.get_by_role("heading", name="Oferty", level=1).wait_for()
     return page
 
 
@@ -50,20 +50,20 @@ def test_search_by_city_filters_results(logged_in_page: Page, add_listing):
     add_listing(f"Inne-{uuid.uuid4().hex[:8]}", "Lipowa", 600_000)
     page = open_listings(logged_in_page)
 
-    page.get_by_label("Szukaj ogłoszeń").fill(city)
+    page.get_by_label("Szukaj ofert").fill(city)
 
     expect(rows(page)).to_have_count(2)
     expect(rows(page).first).to_contain_text(city)
-    expect(page.get_by_text("Znaleziono 2")).to_be_visible()
+    expect(page.get_by_text("2 oferty", exact=True)).to_be_visible()
 
 
 def test_search_without_matches_shows_empty_state(logged_in_page: Page, add_listing):
     add_listing(f"Miasto-{uuid.uuid4().hex[:8]}", "Lipowa", 500_000)
     page = open_listings(logged_in_page)
 
-    page.get_by_label("Szukaj ogłoszeń").fill(f"brak-{uuid.uuid4().hex}")
+    page.get_by_label("Szukaj ofert").fill(f"brak-{uuid.uuid4().hex}")
 
-    expect(page.get_by_text("Brak wyników")).to_be_visible()
+    expect(page.get_by_text("Brak ofert")).to_be_visible()
 
 
 def test_max_price_narrows_results_and_clear_resets(logged_in_page: Page, add_listing):
@@ -71,15 +71,15 @@ def test_max_price_narrows_results_and_clear_resets(logged_in_page: Page, add_li
     add_listing(city, "Tania", 400_000)
     add_listing(city, "Droga", 900_000)
     page = open_listings(logged_in_page)
-    page.get_by_label("Szukaj ogłoszeń").fill(city)
+    page.get_by_label("Szukaj ofert").fill(city)
     expect(rows(page)).to_have_count(2)
 
-    page.get_by_label("Cena do").fill("500000")
+    page.get_by_label("Cena (zł) do").fill("500000")
 
     expect(rows(page)).to_have_count(1)
     expect(rows(page).first).to_contain_text("Tania")
 
     page.get_by_role("button", name="Wyczyść filtry").click()
 
-    expect(page.get_by_label("Szukaj ogłoszeń")).to_have_value("")
-    expect(page.get_by_label("Cena do")).to_have_value("")
+    expect(page.get_by_label("Szukaj ofert")).to_have_value("")
+    expect(page.get_by_label("Cena (zł) do")).to_have_value("")

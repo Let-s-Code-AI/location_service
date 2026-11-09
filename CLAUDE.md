@@ -7,10 +7,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Monorepo for a Polish real-estate listings app. Three self-contained services under `services/`, which talk to each other only over HTTP and never import code from one another:
 
 - `services/backend` — async FastAPI + SQLAlchemy 2.0 (aiosqlite) + Alembic, Python 3.11+. It has its own `CLAUDE.md`, which covers its architecture in detail; read it before changing backend code.
-- `services/frontend` — React 19 + Vite 7, plain JavaScript. There is no test runner and no linter; `npm run build` is the check.
+- `services/frontend` — React 19 + Vite 7, plain JavaScript. Tests run with Vitest + Testing Library (`npm test`); there is no linter.
 - `services/e2e` — pytest + Playwright (Python), which drives the real UI in Chromium.
 
-Requirements docs (`docs/user_stories.md`, `docs/models.md`, `docs/database.md`), UI strings, test names, code comments and the shell scripts are mostly in Polish. Match that language when you edit them.
+Requirements docs (`docs/user_stories.md`, `docs/models.md`, `docs/database.md`), UI strings, test names and the shell scripts are mostly in Polish. Match that language when you edit them. Code comments are the exception — see below.
 
 ## Commands
 
@@ -24,7 +24,7 @@ pytest tests/api/test_locations.py::test_name -q
 alembic revision --autogenerate -m "msg" && alembic upgrade head
 
 # frontend (services/frontend)
-npm run dev | npm run build
+npm run dev | npm run build | npm test
 
 # e2e (services/e2e, own venv via ./setup.sh)
 pytest -q [--headed] [-k login]
@@ -46,3 +46,9 @@ CI (`.github/workflows/tests.yml`) runs only the backend `pytest -q` on Python 3
 - `docs/schema.md` is **generated** by `services/backend/scripts/gen_model_docs.py`. Do not edit it by hand. The backend's `.claude/settings.json` has a PostToolUse hook that regenerates it after any write to `models.py`, plus a Stop hook that runs `pytest -q` and blocks the turn on failures. These hooks are active only when Claude Code is started from `services/backend`.
 - Commits follow Conventional Commits with the service as the scope (`feat(backend): ...`, `docs: ...`). The `commit-planner` subagent (`.claude/agents/commit-planner.md`) writes multi-commit plans to `.agent/plans/<slug>.md` using the rules there: one cause and one service per commit, tests in the same commit as the behavior, at most about 5 files / 200 lines, and the order contract → backend → frontend → e2e → docs.
 - Another session may auto-commit the working tree while you work. Check `git log` and `git status` before overwriting files.
+
+## Code comments
+
+- Write all code comments in **English**: inline comments, docstrings, and file headers, in every service (backend, frontend, e2e).
+- Many existing comments are still in Polish. Translate a comment to English only when you change the code it describes; don't rewrite comments in unrelated code.
+- This rule covers comments only. User-facing UI text, API error messages (`detail`), test names, and requirement docs (`user_stories*.md`, `.agent/plans/`) stay in their current language.
