@@ -1,12 +1,12 @@
 import math
 
 import jwt
-from sqlalchemy import select, delete, func
+from sqlalchemy import select, delete, distinct, func
 from fastapi import FastAPI, Depends, HTTPException, Query, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from typing import List, Optional
+from typing import List, Literal, Optional
 from sql_app.database import get_db
 from sql_app import models, schemas
 from sql_app.security import (
@@ -168,6 +168,34 @@ async def read_listings(
     return schemas.ListingPage(
         items=result.scalars().all(), total=total, skip=skip, limit=limit
     )
+
+
+def _escape_like(value: str) -> str:
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+# Declared before any future /listings/{listing_id}, so "suggestions" never hits the path param.
+@app.get("/listings/suggestions", response_model=List[str])
+async def suggest_listing_values(
+    field: Literal["city", "city_district"],
+    q: str = Query("", max_length=100),
+    city: Optional[str] = Query(None, max_length=255),
+    limit: int = Query(10, ge=1, le=50),
+    db: AsyncSession = Depends(get_db),
+):
+    """Prefix suggestions for city / city_district, only from locations that have listings."""
+    column = getattr(models.Location, field)
+    query = (
+        select(distinct(column))
+        .join(models.Listing, models.Listing.location_id == models.Location.location_id)
+        .where(column.is_not(None), column.like(f"{_escape_like(q)}%", escape="\\"))
+        .order_by(column)
+        .limit(limit)
+    )
+    if city is not None and field == "city_district":
+        query = query.where(models.Location.city == city)
+    result = await db.execute(query)
+    return result.scalars().all()
 
 
 # Location endpoints
