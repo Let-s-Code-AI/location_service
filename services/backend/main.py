@@ -1,7 +1,7 @@
 import math
 
 import jwt
-from sqlalchemy import select, delete, distinct, func
+from sqlalchemy import select, delete, distinct, func, or_
 from fastapi import FastAPI, Depends, HTTPException, Query, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -112,7 +112,12 @@ def _range_conditions(column, name: str, low: Optional[float], high: Optional[fl
     return conditions
 
 
+def _escape_like(value: str) -> str:
+    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 def listing_filters(
+    q: Optional[str] = Query(None, max_length=100),
     price_total_min: Optional[float] = Query(None, ge=0),
     price_total_max: Optional[float] = Query(None, ge=0),
     price_sqm_min: Optional[float] = Query(None, ge=0),
@@ -133,6 +138,25 @@ def listing_filters(
     ]
     if rooms:
         conditions.append(models.Listing.rooms.in_(rooms))
+    # Free-text phrase matched as a substring of city, locality, district or street.
+    # Note: SQLite LIKE is case-insensitive only for ASCII, so "łódź" won't match "Łódź".
+    if q and q.strip():
+        pattern = f"%{_escape_like(q.strip())}%"
+        conditions.append(
+            models.Listing.location.has(
+                or_(
+                    *(
+                        column.ilike(pattern, escape="\\")
+                        for column in (
+                            models.Location.city,
+                            models.Location.locality,
+                            models.Location.city_district,
+                            models.Location.street,
+                        )
+                    )
+                )
+            )
+        )
     # Exact match: values come from /listings/suggestions. `has()` renders as EXISTS,
     # so the same condition works in both the rows and the COUNT query without a join.
     if city is not None:
@@ -168,10 +192,6 @@ async def read_listings(
     return schemas.ListingPage(
         items=result.scalars().all(), total=total, skip=skip, limit=limit
     )
-
-
-def _escape_like(value: str) -> str:
-    return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
 # Declared before any future /listings/{listing_id}, so "suggestions" never hits the path param.

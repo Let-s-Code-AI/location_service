@@ -210,6 +210,11 @@ h1 {
   transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
 }
 
+/* Pole bez ikony (np. liczbowe filtry ogłoszeń) nie potrzebuje miejsca na ikonę. */
+.input-wrap input:first-child {
+  padding-left: 12px;
+}
+
 .input-wrap input:focus {
   outline: none;
   border-color: var(--primary);
@@ -313,6 +318,12 @@ h1 {
 .btn-ghost:hover {
   color: var(--text);
   background: #f5f7fb;
+}
+
+.btn-ghost[aria-pressed='true'] {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: rgba(36, 87, 197, 0.08);
 }
 
 .btn-icon {
@@ -613,7 +624,13 @@ tbody tr.leave {
   min-width: 0;
 }
 
-.filter-group legend {
+.filter-search {
+  grid-column: 1 / -1;
+}
+
+.filter-group legend,
+.filter-group > label {
+  display: block;
   font-size: 13px;
   font-weight: 550;
   margin-bottom: 6px;

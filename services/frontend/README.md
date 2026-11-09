@@ -42,9 +42,9 @@ index.html
 vite.config.js      # React plugin, /api proxy, Vitest config
 src/
 ├── main.jsx        # entry point
-├── App.jsx         # view switch + locations list and add form
+├── App.jsx         # view switch (Lokalizacje / Oferty) + shared toolbar, locations list and add form
 ├── ListingsView.jsx    # listings view: filter state, debounced fetch, table
-├── ListingFilters.jsx  # filter panel: ranges, rooms, autocomplete, count, reset
+├── ListingFilters.jsx  # filter panel: phrase, ranges, rooms, autocomplete, count, reset
 ├── Autocomplete.jsx    # combobox with debounced suggestions and keyboard support
 ├── listingFilters.js   # filter model: validation, query string, Polish plurals
 ├── api.js          # fetch wrapper for the backend

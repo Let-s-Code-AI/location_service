@@ -45,6 +45,20 @@ export default function ListingFilters({
         </div>
       </div>
       <div className="card-body filters-grid">
+        <div className="filter-group filter-search">
+          <label htmlFor="filter-q">Szukaj ofert</label>
+          <div className="input-wrap">
+            <input
+              id="filter-q"
+              type="search"
+              className="no-icon"
+              placeholder="miasto, dzielnica lub ulica"
+              maxLength={100}
+              value={filters.q}
+              onChange={(event) => onChange({ q: event.target.value })}
+            />
+          </div>
+        </div>
         {RANGES.map(({ key, label }) => (
           <fieldset key={key} className="filter-group">
             <legend>{label}</legend>

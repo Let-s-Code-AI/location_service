@@ -7,6 +7,7 @@ export const RANGES = [
 ]
 
 export const EMPTY_FILTERS = Object.freeze({
+  q: '',
   price_total_min: '',
   price_total_max: '',
   price_sqm_min: '',

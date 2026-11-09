@@ -23,6 +23,10 @@ describe('toQuery', () => {
     expect(query.get('skip')).toBe('0')
     expect(query.get('limit')).toBe('50')
   })
+
+  test('przekazuje frazę q', () => {
+    expect(toQuery(filters({ q: ' Mokotów ' }))).toBe(`q=${encodeURIComponent('Mokotów')}`)
+  })
 })
 
 describe('validateFilters', () => {

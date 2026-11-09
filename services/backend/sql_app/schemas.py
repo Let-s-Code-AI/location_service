@@ -119,10 +119,11 @@ class ListingDetail(Listing):
     features: Optional[Features] = None
 
 
-# Listing list (filters) schemas
+# Short schemas for the listings list (no description, URLs or FKs).
 class LocationSummary(BaseModel):
     city: Optional[str] = None
     city_district: Optional[str] = None
+    street: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -12,7 +12,7 @@ const number = new Intl.NumberFormat('pl-PL', { maximumFractionDigits: 2 })
 const dash = <span className="empty">—</span>
 const fmt = (value, unit) => (value == null ? dash : `${number.format(value)} ${unit}`)
 
-export default function ListingsView({ onLogout }) {
+export default function ListingsView({ actions }) {
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [page, setPage] = useState({ items: [], total: null })
   const [loading, setLoading] = useState(true)
@@ -62,11 +62,9 @@ export default function ListingsView({ onLogout }) {
         <div>
           <div className="eyebrow">Rynek</div>
           <h1>Oferty</h1>
-          <p className="subtitle">Zawężaj oferty po cenie, metrażu, liczbie pokoi i lokalizacji.</p>
+          <p className="subtitle">Szukaj po adresie i zawężaj oferty po cenie, metrażu, liczbie pokoi i lokalizacji.</p>
         </div>
-        <button type="button" className="btn btn-ghost" onClick={onLogout}>
-          Wyloguj
-        </button>
+        {actions}
       </header>
 
       {error && (
@@ -90,7 +88,7 @@ export default function ListingsView({ onLogout }) {
           <table>
             <thead>
               <tr>
-                {['Miasto', 'Dzielnica', 'Pokoje', 'Metraż', 'Cena', 'Cena/m²'].map((label) => (
+                {['Miasto', 'Dzielnica', 'Ulica', 'Pokoje', 'Metraż', 'Cena', 'Cena/m²'].map((label) => (
                   <th key={label} className="no-sort">
                     {label}
                   </th>
@@ -100,13 +98,13 @@ export default function ListingsView({ onLogout }) {
             <tbody>
               {total === null ? (
                 <tr>
-                  <td colSpan={6} className="loading-cell">
+                  <td colSpan={7} className="loading-cell">
                     {loading ? 'Ładowanie…' : '—'}
                   </td>
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={6}>
+                  <td colSpan={7}>
                     <div className="empty-state">
                       <Icon name="search" size={40} strokeWidth={1.5} />
                       <strong>Brak ofert</strong>
@@ -119,6 +117,7 @@ export default function ListingsView({ onLogout }) {
                   <tr key={l.listing_id}>
                     <td>{l.location.city || dash}</td>
                     <td>{l.location.city_district || dash}</td>
+                    <td>{l.location.street || dash}</td>
                     <td>{l.rooms ?? dash}</td>
                     <td>{fmt(l.area, 'm²')}</td>
                     <td>{fmt(l.price_total_zl, 'zł')}</td>

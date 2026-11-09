@@ -31,7 +31,7 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers())
 
 async function renderView() {
-  render(<ListingsView onLogout={() => {}} />)
+  render(<ListingsView actions={null} />)
   await flush()
 }
 

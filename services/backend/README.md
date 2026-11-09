@@ -87,7 +87,6 @@ The API is available at <http://127.0.0.1:8000>. Interactive documentation is ge
 | `GET` | `/locations/{location_id}` | Get a single location | `200`, `404` |
 | `PATCH` | `/locations/{location_id}` | Partially update a location (auth required; only the supplied fields change) | `200`, `401`, `404` |
 | `DELETE` | `/locations/{location_id}` | Delete a location (auth required) | `204`, `401`, `404`, `409` |
-
 | `GET` | `/listings/` | List listings with filters (see below); returns `{items, total, skip, limit}` | `200`, `422` |
 | `GET` | `/listings/suggestions` | Autocomplete for `city` / `city_district` (`field`, `q` prefix, optional `city`, `limit` 1–50, default `10`) | `200`, `422` |
 
@@ -99,13 +98,16 @@ The API is available at <http://127.0.0.1:8000>. Interactive documentation is ge
 
 | Parameter | Meaning |
 | --- | --- |
+| `q` | Substring of city, locality, district or street (max 100 chars) |
 | `price_total_min`, `price_total_max` | Total price in zł (inclusive) |
 | `price_sqm_min`, `price_sqm_max` | Price per m² in zł (inclusive) |
 | `area_min`, `area_max` | Area in m² (inclusive) |
 | `rooms` | Number of rooms; repeat for several values (`rooms=2&rooms=3`) |
 | `city`, `city_district` | Exact match on the listing's location |
 
-Ranges must be non-negative and finite, with min ≤ max, otherwise the API returns `422` with a message in `detail`. A listing with an empty (`NULL`) value in a filtered field is excluded only while that filter is active. `total` is the number of listings matching the filters, regardless of `skip`/`limit`. Each item contains `listing_id`, `rooms`, `area`, `price_total_zl`, `price_sqm_zl` and `location` (`city`, `city_district`).
+Ranges must be non-negative and finite, with min ≤ max, otherwise the API returns `422` with a message in `detail`. A listing with an empty (`NULL`) value in a filtered field is excluded only while that filter is active. `total` is the number of listings matching the filters, regardless of `skip`/`limit`. Each item contains `listing_id`, `rooms`, `area`, `price_total_zl`, `price_sqm_zl` and `location` (`city`, `city_district`, `street`).
+
+SQLite `LIKE` is case-insensitive only for ASCII, so `q=łódź` does not match `Łódź`. There is no `POST /listings/` yet. To get sample data locally, run `venv/bin/python scripts/seed_listings.py` (it does nothing when the table is not empty).
 
 `GET /listings/suggestions` returns a sorted list of distinct values that start with `q`, taken only from locations that have at least one listing; with `field=city_district`, `city` narrows the districts to one city. The match is case-insensitive only for ASCII letters (SQLite `LIKE`).
 
@@ -200,6 +202,7 @@ services/backend/
 │   ├── schemas.py           # Pydantic request/response schemas
 │   ├── init_db.py           # Runs `alembic upgrade head`
 │   └── schema.sql           # Reference SQL schema (not used at runtime)
+├── scripts/                 # gen_model_docs.py, seed_listings.py
 ├── alembic/                 # Migration environment and versions
 ├── alembic.ini
 ├── setup.sh                 # Virtualenv + dependency installation

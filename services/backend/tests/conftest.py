@@ -68,8 +68,8 @@ async def auth_client(client):
 def make_listing(db):
     """Fabryka ofert: tworzy Location + wymagane FK (Building/Owner/Features) i Listing."""
 
-    async def _make(city=None, city_district=None, **listing_fields):
-        location = models.Location(city=city, city_district=city_district)
+    async def _make(city=None, city_district=None, street=None, **listing_fields):
+        location = models.Location(city=city, city_district=city_district, street=street)
         building, owner, features = models.Building(), models.Owner(), models.Features()
         db.add_all([location, building, owner, features])
         await db.flush()

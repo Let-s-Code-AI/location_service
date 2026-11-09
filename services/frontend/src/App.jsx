@@ -58,24 +58,32 @@ export default function App() {
     setAuthed(false)
   }
 
-  const tab = (key, label) => (
-    <button type="button" className="btn btn-ghost" aria-pressed={view === key} onClick={() => setView(key)}>
-      {label}
-    </button>
+  const actions = (
+    <div className="toolbar">
+      {[
+        ['locations', 'Lokalizacje'],
+        ['listings', 'Oferty'],
+      ].map(([key, label]) => (
+        <button
+          key={key}
+          type="button"
+          className="btn btn-ghost"
+          aria-pressed={view === key}
+          onClick={() => setView(key)}
+        >
+          {label}
+        </button>
+      ))}
+      <button type="button" className="btn btn-ghost" onClick={handleLogout}>
+        Wyloguj
+      </button>
+    </div>
   )
 
-  return (
-    <>
-      <nav className="container" aria-label="Widok" style={{ display: 'flex', gap: 8, paddingBottom: 0 }}>
-        {tab('locations', 'Lokalizacje')}
-        {tab('listings', 'Oferty')}
-      </nav>
-      {view === 'listings' ? <ListingsView onLogout={handleLogout} /> : <Locations onLogout={handleLogout} />}
-    </>
-  )
+  return view === 'listings' ? <ListingsView actions={actions} /> : <Locations actions={actions} />
 }
 
-function Locations({ onLogout }) {
+function Locations({ actions }) {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -212,9 +220,7 @@ function Locations({ onLogout }) {
           <h1>Lokalizacje</h1>
           <p className="subtitle">Zarządzaj adresami: miastami, miejscowościami, dzielnicami i ulicami.</p>
         </div>
-        <button type="button" className="btn btn-ghost" onClick={onLogout}>
-          Wyloguj
-        </button>
+        {actions}
       </header>
 
       {error && (
