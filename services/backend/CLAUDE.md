@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Backend service (`services/backend/`) of a Polish real-estate listings app: async FastAPI + SQLAlchemy 2.0 (aiosqlite) REST API. The frontend lives separately in `services/frontend/`. Python >= 3.11. Project docs (`user_stories*.md`, in the repo root) and code comments are largely in Polish. Tests live in `tests/` (pytest); no linter is configured.
+Backend service (`services/backend/`) of a Polish real-estate listings app: async FastAPI + SQLAlchemy 2.0 (aiosqlite) REST API. The frontend lives separately in `services/frontend/`. Python >= 3.11. Project docs (`user_stories*.md`, in the repo root) are in Polish. New code comments must be in English (see the repo-root `CLAUDE.md`), but many existing ones are still in Polish. Tests live in `tests/` (pytest); no linter is configured.
 
 ## Commands
 
