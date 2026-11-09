@@ -1,10 +1,12 @@
+import math
+
 import jwt
 from sqlalchemy import select, delete, func
 from fastapi import FastAPI, Depends, HTTPException, Query, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from typing import List
+from typing import List, Optional
 from sql_app.database import get_db
 from sql_app import models, schemas
 from sql_app.security import (
@@ -94,15 +96,53 @@ async def read_me(current_user: models.User = Depends(get_current_user)):
 
 
 # Listing endpoints
+def _range_conditions(column, name: str, low: Optional[float], high: Optional[float]) -> list:
+    for value in (low, high):
+        if value is not None and not math.isfinite(value):
+            raise HTTPException(status_code=422, detail=f"{name} musi być skończoną liczbą")
+    if low is not None and high is not None and low > high:
+        raise HTTPException(
+            status_code=422, detail=f"{name}_min nie może być większe niż {name}_max"
+        )
+    conditions = []
+    if low is not None:
+        conditions.append(column >= low)
+    if high is not None:
+        conditions.append(column <= high)
+    return conditions
+
+
+def listing_filters(
+    price_total_min: Optional[float] = Query(None, ge=0),
+    price_total_max: Optional[float] = Query(None, ge=0),
+    price_sqm_min: Optional[float] = Query(None, ge=0),
+    price_sqm_max: Optional[float] = Query(None, ge=0),
+    area_min: Optional[float] = Query(None, ge=0),
+    area_max: Optional[float] = Query(None, ge=0),
+    rooms: List[int] = Query([]),
+) -> list:
+    """Builds SQL conditions for GET /listings/. A NULL in a filtered column excludes the row."""
+    if any(r < 1 for r in rooms):
+        raise HTTPException(status_code=422, detail="rooms musi być liczbą większą od 0")
+    conditions = [
+        *_range_conditions(models.Listing.price_total_zl, "price_total", price_total_min, price_total_max),
+        *_range_conditions(models.Listing.price_sqm_zl, "price_sqm", price_sqm_min, price_sqm_max),
+        *_range_conditions(models.Listing.area, "area", area_min, area_max),
+    ]
+    if rooms:
+        conditions.append(models.Listing.rooms.in_(rooms))
+    return conditions
+
+
 @app.get("/listings/", response_model=schemas.ListingPage)
 async def read_listings(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=500),
+    conditions: list = Depends(listing_filters),
     db: AsyncSession = Depends(get_db),
 ):
     # One list of conditions shared by the rows query and the count query,
     # so `total` always reflects exactly the same filters as `items`.
-    conditions = []
 
     total = await db.scalar(
         select(func.count()).select_from(models.Listing).where(*conditions)
