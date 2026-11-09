@@ -83,3 +83,12 @@ export const createLocation = (data) =>
 
 export const deleteLocation = (id) =>
   request(`/locations/${id}`, { method: 'DELETE' })
+
+// Listings
+// Puste filtry nie trafiają do query stringa, żeby backend ich nie walidował.
+export const listListings = (params = {}) => {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, v]) => v !== '' && v != null),
+  ).toString()
+  return request(`/listings/${qs ? `?${qs}` : ''}`)
+}

@@ -7,6 +7,7 @@ import {
   getToken,
   listLocations,
 } from './api.js'
+import Listings from './Listings.jsx'
 import Login from './Login.jsx'
 import { Field, Icon } from './ui.jsx'
 
@@ -40,6 +41,7 @@ const API_FIELD = {
 
 export default function App() {
   const [authed, setAuthed] = useState(() => Boolean(getToken()))
+  const [view, setView] = useState('locations')
 
   useEffect(() => {
     const onExpired = () => setAuthed(false)
@@ -56,10 +58,32 @@ export default function App() {
     setAuthed(false)
   }
 
-  return <Locations onLogout={handleLogout} />
+  const actions = (
+    <div className="toolbar">
+      {[
+        ['locations', 'Lokalizacje'],
+        ['listings', 'Ogłoszenia'],
+      ].map(([key, label]) => (
+        <button
+          key={key}
+          type="button"
+          className="btn btn-ghost"
+          aria-pressed={view === key}
+          onClick={() => setView(key)}
+        >
+          {label}
+        </button>
+      ))}
+      <button type="button" className="btn btn-ghost" onClick={handleLogout}>
+        Wyloguj
+      </button>
+    </div>
+  )
+
+  return view === 'listings' ? <Listings actions={actions} /> : <Locations actions={actions} />
 }
 
-function Locations({ onLogout }) {
+function Locations({ actions }) {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -196,9 +220,7 @@ function Locations({ onLogout }) {
           <h1>Lokalizacje</h1>
           <p className="subtitle">Zarządzaj adresami: miastami, miejscowościami, dzielnicami i ulicami.</p>
         </div>
-        <button type="button" className="btn btn-ghost" onClick={onLogout}>
-          Wyloguj
-        </button>
+        {actions}
       </header>
 
       {error && (

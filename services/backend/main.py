@@ -1,9 +1,10 @@
 import jwt
-from sqlalchemy import select, delete, func
-from fastapi import FastAPI, Depends, HTTPException, status
+from sqlalchemy import select, delete, func, or_
+from sqlalchemy.orm import selectinload
+from fastapi import FastAPI, Depends, HTTPException, Query, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import List
+from typing import List, Optional
 from sql_app.database import get_db
 from sql_app import models, schemas
 from sql_app.security import (
@@ -181,3 +182,54 @@ async def delete_location(
         delete(models.Location).where(models.Location.location_id == location_id)
     )
     await db.commit()
+
+
+@app.get("/listings/", response_model=List[schemas.ListingSummary])
+async def search_listings(
+    q: Optional[str] = Query(None, max_length=100),
+    price_min: Optional[float] = Query(None, ge=0),
+    price_max: Optional[float] = Query(None, ge=0),
+    rooms_min: Optional[int] = Query(None, ge=1),
+    area_min: Optional[float] = Query(None, ge=0),
+    area_max: Optional[float] = Query(None, ge=0),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+    db: AsyncSession = Depends(get_db),
+):
+    """Lista ogłoszeń z filtrami wyszukiwarki.
+
+    `q` szuka fragmentu w mieście, miejscowości, dzielnicy i ulicy (LIKE).
+    Uwaga: w SQLite LIKE ignoruje wielkość liter tylko dla ASCII,
+    więc „łódź” nie znajdzie „Łódź”.
+    """
+    if price_min is not None and price_max is not None and price_min > price_max:
+        raise HTTPException(status_code=422, detail="price_min nie może być większe niż price_max")
+    if area_min is not None and area_max is not None and area_min > area_max:
+        raise HTTPException(status_code=422, detail="area_min nie może być większe niż area_max")
+
+    Listing, Location = models.Listing, models.Location
+    stmt = select(Listing).join(Listing.location).options(selectinload(Listing.location))
+
+    if q and q.strip():
+        pattern = f"%{q.strip()}%"
+        stmt = stmt.where(
+            or_(
+                Location.city.ilike(pattern),
+                Location.locality.ilike(pattern),
+                Location.city_district.ilike(pattern),
+                Location.street.ilike(pattern),
+            )
+        )
+    if price_min is not None:
+        stmt = stmt.where(Listing.price_total_zl >= price_min)
+    if price_max is not None:
+        stmt = stmt.where(Listing.price_total_zl <= price_max)
+    if rooms_min is not None:
+        stmt = stmt.where(Listing.rooms >= rooms_min)
+    if area_min is not None:
+        stmt = stmt.where(Listing.area >= area_min)
+    if area_max is not None:
+        stmt = stmt.where(Listing.area <= area_max)
+
+    result = await db.execute(stmt.order_by(Listing.listing_id).offset(skip).limit(limit))
+    return result.scalars().all()

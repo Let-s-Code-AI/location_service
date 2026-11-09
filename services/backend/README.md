@@ -87,6 +87,7 @@ The API is available at <http://127.0.0.1:8000>. Interactive documentation is ge
 | `GET` | `/locations/{location_id}` | Get a single location | `200`, `404` |
 | `PATCH` | `/locations/{location_id}` | Partially update a location (auth required; only the supplied fields change) | `200`, `401`, `404` |
 | `DELETE` | `/locations/{location_id}` | Delete a location (auth required) | `204`, `401`, `404`, `409` |
+| `GET` | `/listings/` | Search listings (see below) | `200`, `422` |
 
 `DELETE` returns `409 Conflict` when the location is still referenced by one or more listings.
 
@@ -129,6 +130,26 @@ curl -X DELETE http://127.0.0.1:8000/locations/1
 ```
 
 All `Location` fields (`city`, `locality`, `city_district`, `street`, `full_address`, `latitude`, `longitude`) are optional.
+
+### Listing search
+
+`GET /listings/` is public and returns a short summary (`listing_id`, `rooms`, `area`, `price_total_zl`, `location: {city, city_district, street}`), ordered by `listing_id`. All query params are optional:
+
+| Param | Meaning |
+| --- | --- |
+| `q` | Substring of city, locality, district or street (max 100 chars) |
+| `price_min`, `price_max` | Range of `price_total_zl` (`422` when min > max) |
+| `rooms_min` | Minimum number of rooms |
+| `area_min`, `area_max` | Range of `area` in m² (`422` when min > max) |
+| `skip`, `limit` | Pagination; `limit` is 1–500, default 100 |
+
+```bash
+curl "http://127.0.0.1:8000/listings/?q=Mokot&price_max=1000000&rooms_min=2"
+```
+
+SQLite `LIKE` is case-insensitive only for ASCII, so `q=łódź` does not match `Łódź`.
+
+There is no `POST /listings/` yet. To get sample data locally, run `venv/bin/python scripts/seed_listings.py` (it does nothing when the table is not empty).
 
 ## Data model
 
@@ -173,6 +194,7 @@ services/backend/
 │   ├── schemas.py           # Pydantic request/response schemas
 │   ├── init_db.py           # Runs `alembic upgrade head`
 │   └── schema.sql           # Reference SQL schema (not used at runtime)
+├── scripts/                 # gen_model_docs.py, seed_listings.py
 ├── alembic/                 # Migration environment and versions
 ├── alembic.ini
 ├── setup.sh                 # Virtualenv + dependency installation

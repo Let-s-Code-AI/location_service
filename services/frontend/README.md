@@ -34,7 +34,9 @@ index.html
 vite.config.js      # React plugin + /api proxy
 src/
 ├── main.jsx        # entry point
-├── App.jsx         # locations list + add form
+├── App.jsx         # view switch (Lokalizacje / Ogłoszenia), locations list + add form
+├── Listings.jsx    # listings search: phrase, price and rooms filters (debounced GET /listings/)
+├── ui.jsx          # shared Icon and Field components
 ├── api.js          # fetch wrapper for the backend
 └── App.css
 ```
