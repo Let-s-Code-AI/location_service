@@ -1,6 +1,8 @@
-# programming_tools_ai
+# location_service
 
 A real-estate listings application organized as a **monorepo**: every deployable part lives in its own service under `services/`, and everything shared (requirements, CI) lives at the repo root.
+
+The backend is built with Python (FastAPI, async SQLAlchemy 2.0, SQLite and Alembic), the frontend with React and Vite, and end-to-end tests use pytest with Playwright.
 
 ## Repository layout
 

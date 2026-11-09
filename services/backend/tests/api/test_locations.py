@@ -68,3 +68,30 @@ async def test_delete_location_used_by_listing_returns_409(auth_client, db):
     response = await auth_client.delete(f"/locations/{location.location_id}")
 
     assert response.status_code == 409
+
+
+async def test_location_description_create_and_patch(auth_client):
+    created = (
+        await auth_client.post("/locations/", json={**LOCATION, "description": "Blisko Rynku"})
+    ).json()
+    assert created["description"] == "Blisko Rynku"
+
+    response = await auth_client.patch(
+        f"/locations/{created['location_id']}", json={"description": "Nowy opis"}
+    )
+
+    assert response.status_code == 200
+    assert response.json()["description"] == "Nowy opis"
+    assert response.json()["street"] == "Floriańska"
+
+
+async def test_location_description_defaults_to_null(auth_client):
+    created = (await auth_client.post("/locations/", json=LOCATION)).json()
+
+    assert created["description"] is None
+
+
+async def test_location_description_too_long_returns_422(auth_client):
+    response = await auth_client.post("/locations/", json={"city": "Kraków", "description": "x" * 2001})
+
+    assert response.status_code == 422

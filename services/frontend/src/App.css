@@ -222,6 +222,37 @@ h1 {
   box-shadow: 0 0 0 4px rgba(210, 59, 59, 0.1);
 }
 
+.field-full {
+  margin-top: 14px;
+}
+
+.field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: #fbfcfe;
+  resize: vertical;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.field textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(36, 87, 197, 0.12);
+}
+
+td.description {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .hint {
   font-size: 12px;
   color: var(--danger);

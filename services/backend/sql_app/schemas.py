@@ -12,6 +12,7 @@ class LocationBase(BaseModel):
     full_address: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None
+    description: Optional[str] = Field(None, max_length=2000)
 
 
 class LocationCreate(LocationBase):

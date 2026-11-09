@@ -39,3 +39,25 @@ dist/
 .vscode/
 *.swp
 .DS_Store
+
+# Logi (np. .uvicorn.log z start.sh)
+*.log
+logs/
+
+# Node / frontend
+node_modules/
+.vite/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Testy E2E (Playwright)
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# Lokalne ustawienia Claude Code
+.claude/settings.local.json

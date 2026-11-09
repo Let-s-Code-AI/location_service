@@ -10,8 +10,9 @@ import {
 import Login from './Login.jsx'
 import { Field, Icon } from './ui.jsx'
 
-const FIELDS = ['miasto', 'miejscowosc', 'dzielnica', 'ulica']
-const EMPTY_FORM = { miasto: '', miejscowosc: '', dzielnica: '', ulica: '' }
+const FIELDS = ['miasto', 'miejscowosc', 'dzielnica', 'ulica', 'opis']
+const EMPTY_FORM = { miasto: '', miejscowosc: '', dzielnica: '', ulica: '', opis: '' }
+const DESCRIPTION_MAX = 2000 // jak max_length w schemas.LocationBase
 const PALETTE = ['#2457c5', '#7b3fd1', '#0f8a7a', '#c2410c', '#be185d', '#0369a1']
 
 const colorFor = (s) =>
@@ -28,6 +29,7 @@ const toRow = (l) => ({
   miejscowosc: l.locality ?? '',
   dzielnica: l.city_district ?? '',
   ulica: l.street ?? '',
+  opis: l.description ?? '',
 })
 
 // Odwrotność toRow: klucze formularza (PL) -> pola API (snake_case). Backend ignoruje nieznane pola.
@@ -36,6 +38,7 @@ const API_FIELD = {
   miejscowosc: 'locality',
   dzielnica: 'city_district',
   ulica: 'street',
+  opis: 'description',
 }
 
 export default function App() {
@@ -194,7 +197,7 @@ function Locations({ onLogout }) {
         <div>
           <div className="eyebrow">Słowniki</div>
           <h1>Lokalizacje</h1>
-          <p className="subtitle">Zarządzaj adresami: miastami, miejscowościami, dzielnicami i ulicami.</p>
+          <p className="subtitle">Zarządzaj adresami: miastami, miejscowościami, dzielnicami, ulicami i ich opisami.</p>
         </div>
         <button type="button" className="btn btn-ghost" onClick={onLogout}>
           Wyloguj
@@ -283,6 +286,17 @@ function Locations({ onLogout }) {
                 Dodaj
               </button>
             </div>
+            <div className="field field-full">
+              <label htmlFor="opis">Opis</label>
+              <textarea
+                id="opis"
+                rows={3}
+                maxLength={DESCRIPTION_MAX}
+                placeholder="np. Blisko metra, spokojna okolica"
+                value={form.opis}
+                onChange={setField('opis')}
+              />
+            </div>
             <div className="hint">{hint}</div>
           </form>
         </div>
@@ -312,6 +326,7 @@ function Locations({ onLogout }) {
                 {sortTh('miasto', 'Miasto')}
                 {sortTh('dzielnica', 'Dzielnica')}
                 {sortTh('ulica', 'Ulica')}
+                {sortTh('opis', 'Opis')}
                 <th className="no-sort">Status</th>
                 <th className="no-sort" />
               </tr>
@@ -319,11 +334,11 @@ function Locations({ onLogout }) {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="loading-cell">Ładowanie…</td>
+                  <td colSpan={7} className="loading-cell">Ładowanie…</td>
                 </tr>
               ) : visible.length === 0 ? (
                 <tr>
-                  <td colSpan={6}>
+                  <td colSpan={7}>
                     <div className="empty-state">
                       <Icon name="pin" size={40} strokeWidth={1.5} />
                       <strong>{query ? 'Brak wyników' : 'Brak lokalizacji'}</strong>
@@ -358,6 +373,9 @@ function Locations({ onLogout }) {
                       </td>
                       <td>{cell(r.dzielnica)}</td>
                       <td>{cell(r.ulica)}</td>
+                      <td className="description" title={r.opis || undefined}>
+                        {cell(r.opis)}
+                      </td>
                       <td>
                         {isComplete(r) ? (
                           <span className="tag ok">Kompletna</span>
