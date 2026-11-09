@@ -1,8 +1,9 @@
 import jwt
 from sqlalchemy import select, delete, func
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, Query, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from typing import List
 from sql_app.database import get_db
 from sql_app import models, schemas
@@ -90,6 +91,33 @@ async def login(
 @app.get("/auth/me", response_model=schemas.User)
 async def read_me(current_user: models.User = Depends(get_current_user)):
     return current_user
+
+
+# Listing endpoints
+@app.get("/listings/", response_model=schemas.ListingPage)
+async def read_listings(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=500),
+    db: AsyncSession = Depends(get_db),
+):
+    # One list of conditions shared by the rows query and the count query,
+    # so `total` always reflects exactly the same filters as `items`.
+    conditions = []
+
+    total = await db.scalar(
+        select(func.count()).select_from(models.Listing).where(*conditions)
+    )
+    result = await db.execute(
+        select(models.Listing)
+        .options(selectinload(models.Listing.location))
+        .where(*conditions)
+        .order_by(models.Listing.listing_id)
+        .offset(skip)
+        .limit(limit)
+    )
+    return schemas.ListingPage(
+        items=result.scalars().all(), total=total, skip=skip, limit=limit
+    )
 
 
 # Location endpoints
