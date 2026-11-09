@@ -222,6 +222,42 @@ h1 {
   box-shadow: 0 0 0 4px rgba(210, 59, 59, 0.1);
 }
 
+.input-wrap input.no-icon {
+  padding-left: 12px;
+}
+
+/* Lista podpowiedzi pod polem Autocomplete */
+.suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 10;
+  max-height: 240px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+
+.suggestions li {
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.suggestions li:hover,
+.suggestions li[aria-selected='true'] {
+  background: var(--primary-50);
+  color: var(--primary-600);
+}
+
 .hint {
   font-size: 12px;
   color: var(--danger);
