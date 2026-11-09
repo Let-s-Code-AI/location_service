@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from datetime import date
-from typing import Optional
+from typing import List, Optional
 
 
 # Location schemas
@@ -118,6 +118,31 @@ class ListingDetail(Listing):
     owner: Optional[Owner] = None
     features: Optional[Features] = None
 
+
+# Listing list (filters) schemas
+class LocationSummary(BaseModel):
+    city: Optional[str] = None
+    city_district: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ListingSummary(BaseModel):
+    listing_id: int
+    rooms: Optional[int] = None
+    area: Optional[float] = None
+    price_total_zl: Optional[float] = None
+    price_sqm_zl: Optional[float] = None
+    location: LocationSummary
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ListingPage(BaseModel):
+    items: List[ListingSummary]
+    total: int  # count after filters, independent of skip/limit
+    skip: int
+    limit: int
 
 
 # Auth schemas
