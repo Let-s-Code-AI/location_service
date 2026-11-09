@@ -120,6 +120,8 @@ def listing_filters(
     area_min: Optional[float] = Query(None, ge=0),
     area_max: Optional[float] = Query(None, ge=0),
     rooms: List[int] = Query([]),
+    city: Optional[str] = Query(None, max_length=255),
+    city_district: Optional[str] = Query(None, max_length=255),
 ) -> list:
     """Builds SQL conditions for GET /listings/. A NULL in a filtered column excludes the row."""
     if any(r < 1 for r in rooms):
@@ -131,6 +133,14 @@ def listing_filters(
     ]
     if rooms:
         conditions.append(models.Listing.rooms.in_(rooms))
+    # Exact match: values come from /listings/suggestions. `has()` renders as EXISTS,
+    # so the same condition works in both the rows and the COUNT query without a join.
+    if city is not None:
+        conditions.append(models.Listing.location.has(models.Location.city == city))
+    if city_district is not None:
+        conditions.append(
+            models.Listing.location.has(models.Location.city_district == city_district)
+        )
     return conditions
 
 

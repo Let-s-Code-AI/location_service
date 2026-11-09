@@ -88,3 +88,35 @@ async def test_invalid_filter_values_return_422(client, params):
     response = await client.get("/listings/", params=params)
 
     assert response.status_code == 422, params
+
+
+async def test_city_filter(client, make_listing):
+    krakow = await make_listing(city="Kraków", city_district="Podgórze")
+    await make_listing(city="Warszawa", city_district="Mokotów")
+    await make_listing()  # brak miasta
+
+    assert await ids(client, city="Kraków") == ({krakow.listing_id}, 1)
+
+
+async def test_city_and_district_filter(client, make_listing):
+    podgorze = await make_listing(city="Kraków", city_district="Podgórze")
+    await make_listing(city="Kraków", city_district="Krowodrza")
+
+    assert await ids(client, city="Kraków", city_district="Podgórze") == ({podgorze.listing_id}, 1)
+    _, total = await ids(client, city_district="Krowodrza")
+    assert total == 1
+
+
+async def test_city_filter_is_exact(client, make_listing):
+    await make_listing(city="Kraków")
+
+    assert await ids(client, city="Krak") == (set(), 0)
+    assert await ids(client, city="Gdańsk") == (set(), 0)
+
+
+async def test_city_combined_with_price(client, make_listing):
+    match = await make_listing(city="Kraków", price_total_zl=500000.0)
+    await make_listing(city="Kraków", price_total_zl=900000.0)
+    await make_listing(city="Warszawa", price_total_zl=500000.0)
+
+    assert await ids(client, city="Kraków", price_total_max=600000) == ({match.listing_id}, 1)
