@@ -7,6 +7,7 @@ import {
   getToken,
   listLocations,
 } from './api.js'
+import ListingsView from './ListingsView.jsx'
 import Login from './Login.jsx'
 import { Field, Icon } from './ui.jsx'
 
@@ -40,6 +41,7 @@ const API_FIELD = {
 
 export default function App() {
   const [authed, setAuthed] = useState(() => Boolean(getToken()))
+  const [view, setView] = useState('locations')
 
   useEffect(() => {
     const onExpired = () => setAuthed(false)
@@ -56,7 +58,21 @@ export default function App() {
     setAuthed(false)
   }
 
-  return <Locations onLogout={handleLogout} />
+  const tab = (key, label) => (
+    <button type="button" className="btn btn-ghost" aria-pressed={view === key} onClick={() => setView(key)}>
+      {label}
+    </button>
+  )
+
+  return (
+    <>
+      <nav className="container" aria-label="Widok" style={{ display: 'flex', gap: 8, paddingBottom: 0 }}>
+        {tab('locations', 'Lokalizacje')}
+        {tab('listings', 'Oferty')}
+      </nav>
+      {view === 'listings' ? <ListingsView onLogout={handleLogout} /> : <Locations onLogout={handleLogout} />}
+    </>
+  )
 }
 
 function Locations({ onLogout }) {
