@@ -1,4 +1,6 @@
 // Thin client for the backend API (proxied under /api, see vite.config.js).
+import { toQuery } from './listingFilters.js'
+
 const BASE = '/api'
 const TOKEN_KEY = 'accessToken'
 
@@ -83,3 +85,13 @@ export const createLocation = (data) =>
 
 export const deleteLocation = (id) =>
   request(`/locations/${id}`, { method: 'DELETE' })
+
+// Listings
+export const listListings = (filters, { skip = 0, limit = 50 } = {}) =>
+  request(`/listings/?${toQuery(filters, { skip, limit })}`)
+
+export const suggestListingValues = (field, q, city) => {
+  const params = new URLSearchParams({ field, q })
+  if (city) params.append('city', city)
+  return request(`/listings/suggestions?${params}`)
+}
