@@ -1,5 +1,8 @@
 # Plan: lista ogłoszeń (GET /listings/ + widok w UI)
 
+> **Status:** zrealizowany w rozszerzonej formie na gałęzi `feat/listings-search` — `GET /listings/` ma filtry wyszukiwarki
+> (`q`, cena, pokoje, metraż), a widok to `src/Listings.jsx` z paskiem wyszukiwania. Seed: `scripts/seed_listings.py`.
+
 
 **Zakres:** `services/backend/{main.py, sql_app/schemas.py, tests/api/}`, `services/frontend/src/`, `*.md`
 **Poza zakresem:** `alembic/`, `sql_app/models.py`, `.github/`, `.agent/` (poza tym plikiem), `package*.json`, `App.css`
