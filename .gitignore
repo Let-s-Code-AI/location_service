@@ -39,3 +39,5 @@ dist/
 .vscode/
 *.swp
 .DS_Store
+
+.playwright-mcp/
