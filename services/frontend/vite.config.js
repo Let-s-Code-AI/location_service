@@ -6,6 +6,11 @@ const BACKEND_URL = process.env.BACKEND_URL ?? 'http://127.0.0.1:8000'
 
 export default defineConfig({
   plugins: [react()],
+  test: {
+    environment: 'jsdom',
+    // globals: Testing Library auto-cleanup between tests needs a global afterEach.
+    globals: true,
+  },
   server: {
     port: 5173,
     proxy: {
