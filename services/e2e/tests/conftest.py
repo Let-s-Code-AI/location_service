@@ -57,7 +57,15 @@ def _stop(process: subprocess.Popen):
 
 
 @pytest.fixture(scope="session")
-def app_base_url(tmp_path_factory):
+def e2e_db_file(tmp_path_factory) -> Path | None:
+    """Plik SQLite backendu E2E; None, gdy testujemy zewnętrzną aplikację (E2E_BASE_URL)."""
+    if os.environ.get("E2E_BASE_URL"):
+        return None
+    return tmp_path_factory.mktemp("e2e") / "e2e.db"
+
+
+@pytest.fixture(scope="session")
+def app_base_url(e2e_db_file):
     """Bazowy URL frontendu. Uruchamia backend i frontend, chyba że podano E2E_BASE_URL."""
     external = os.environ.get("E2E_BASE_URL")
     if external:
@@ -67,8 +75,8 @@ def app_base_url(tmp_path_factory):
     if not (FRONTEND_DIR / "node_modules").exists():
         raise RuntimeError("Brak node_modules — uruchom `npm install` w services/frontend")
 
-    workdir = tmp_path_factory.mktemp("e2e")
-    db_file = workdir / "e2e.db"
+    db_file = e2e_db_file
+    workdir = db_file.parent
     env = {
         **os.environ,
         "SECRET_KEY": SECRET_KEY,
