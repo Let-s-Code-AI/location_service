@@ -39,7 +39,10 @@ PY
 )
 read -r score killed tested survived <<< "$summary"
 
-echo "Mutanty: zabite ${killed}/${tested}, przeżyły ${survived} (lista: mutmut results)"
+echo "▶ Mutanty, które przeżyły (mutmut results; diff: mutmut show <nazwa>)"
+mutmut results
+
+echo "Mutanty: zabite ${killed}/${tested}, przeżyły ${survived}"
 echo "Wynik mutacji: ${score}% (próg: ${MIN}%)"
 
 if python -c "import sys; sys.exit(0 if float('$score') >= float('$MIN') else 1)"; then
