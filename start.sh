@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Uruchamia projekt: backend (FastAPI/uvicorn na porcie 8000) i frontend (Vite na porcie 5173).
-# Wymaga wcześniejszego ./install.sh. Ctrl+C zatrzymuje oba procesy.
+# Starts the project: backend (FastAPI/uvicorn on port 8000) and frontend (Vite on port 5173).
+# Requires running ./install.sh first. Ctrl+C stops both processes.
 
 set -euo pipefail
 
@@ -14,41 +14,41 @@ FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 info()  { echo "▶ $*"; }
 fail()  { echo "❌ $*" >&2; exit 1; }
 
-# --- 1. Sprawdzenie, czy instalacja została wykonana ------------------------
-[ -x "$BACKEND_DIR/venv/bin/uvicorn" ] || fail "Brak backendu w venv. Najpierw uruchom ./install.sh"
-[ -f "$BACKEND_DIR/.env" ]             || fail "Brak services/backend/.env. Uruchom ./install.sh"
-[ -x "$FRONTEND_DIR/node_modules/.bin/vite" ] || fail "Brak zależności frontendu. Najpierw uruchom ./install.sh"
+# --- 1. Check if installation was performed ------------------------
+[ -x "$BACKEND_DIR/venv/bin/uvicorn" ] || fail "Backend not found in venv. Run ./install.sh first."
+[ -f "$BACKEND_DIR/.env" ]             || fail "services/backend/.env not found. Run ./install.sh"
+[ -x "$FRONTEND_DIR/node_modules/.bin/vite" ] || fail "Frontend dependencies missing. Run ./install.sh first."
 
-# Port już zajęty? Lepiej zatrzymać się z jasnym komunikatem niż dostać błąd z uvicorna/Vite.
+# Port already in use? Better to stop with a clear message than get an error from uvicorn/Vite.
 port_in_use() {
     (echo > "/dev/tcp/127.0.0.1/$1") >/dev/null 2>&1
 }
 if port_in_use "$BACKEND_PORT"; then
-    fail "Port $BACKEND_PORT jest zajęty. Zatrzymaj proces na tym porcie albo ustaw BACKEND_PORT=<port>."
+    fail "Port $BACKEND_PORT is in use. Stop the process on this port or set BACKEND_PORT=<port>."
 fi
 if port_in_use "$FRONTEND_PORT"; then
-    fail "Port $FRONTEND_PORT jest zajęty. Zatrzymaj proces na tym porcie albo ustaw FRONTEND_PORT=<port>."
+    fail "Port $FRONTEND_PORT is in use. Stop the process on this port or set FRONTEND_PORT=<port>."
 fi
 
-# --- 2. Zatrzymywanie procesów po Ctrl+C / zakończeniu ----------------------
+# --- 2. Stopping processes after Ctrl+C / termination ----------------------
 BACKEND_PID=""
 FRONTEND_PID=""
 
 cleanup() {
     echo ""
-    info "Zatrzymywanie serwisów..."
-    # Najpierw dzieci (np. worker uvicorn --reload), potem same procesy.
+    info "Stopping services..."
+    # First children (e.g., uvicorn --reload worker), then the processes themselves.
     for pid in "$FRONTEND_PID" "$BACKEND_PID"; do
         [ -n "$pid" ] && pkill -P "$pid" 2>/dev/null || true
         [ -n "$pid" ] && kill "$pid" 2>/dev/null || true
     done
     wait 2>/dev/null || true
-    echo "👋 Do zobaczenia!"
+    echo "👋 See you!"
 }
 trap cleanup EXIT INT TERM
 
-# --- 3. Baza danych (idempotentne, bezpieczne przy każdym starcie) ----------
-info "Backend: aktualizacja bazy danych..."
+# --- 3. Database (idempotent, safe on every start) -----------------------
+info "Backend: updating database..."
 (
     cd "$BACKEND_DIR"
     # shellcheck disable=SC1091
@@ -57,7 +57,7 @@ info "Backend: aktualizacja bazy danych..."
 )
 
 # --- 4. Backend --------------------------------------------------------------
-info "Backend: http://127.0.0.1:$BACKEND_PORT (dokumentacja API: /docs)"
+info "Backend: http://127.0.0.1:$BACKEND_PORT (API documentation: /docs)"
 (
     cd "$BACKEND_DIR"
     exec venv/bin/uvicorn main:app --reload --port "$BACKEND_PORT"
@@ -73,12 +73,12 @@ info "Frontend: http://localhost:$FRONTEND_PORT"
 FRONTEND_PID=$!
 
 echo ""
-echo "🚀 Projekt działa. Otwórz http://localhost:$FRONTEND_PORT  (Ctrl+C = zatrzymanie)"
+echo "🚀 Project is running. Open http://localhost:$FRONTEND_PORT  (Ctrl+C = stop)"
 echo ""
 
-# Czekamy, aż którykolwiek z procesów się zakończy (np. błąd startu lub Ctrl+C).
-# Pętla zamiast `wait -n`, bo macOS domyślnie ma bash 3.2, który go nie obsługuje.
+# Wait until either process ends (e.g., startup error or Ctrl+C).
+# Loop instead of `wait -n`, because macOS defaults to bash 3.2, which does not support it.
 while kill -0 "$BACKEND_PID" 2>/dev/null && kill -0 "$FRONTEND_PID" 2>/dev/null; do
     sleep 1
 done
-echo "⚠️  Jeden z serwisów zakończył działanie."
+echo "⚠️  One of the services has terminated."
