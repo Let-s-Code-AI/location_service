@@ -1,4 +1,4 @@
-# Wirtualne środowisko (tworzone przez setup.sh)
+# Wirtualne środowisko (tworzone przez setup.sh / install.sh)
 venv/
 .venv/
 env/
@@ -12,35 +12,46 @@ __pycache__/
 *.db
 *.sqlite
 *.sqlite3
-sql_app.db
 
-# Pliki SQL (schematy, zrzuty)
+# Zrzuty SQL - poza śledzoną kopią referencyjną schematu backendu
 *.sql
+!services/backend/sql_app/schema.sql
 
 # Sekrety i zmienne środowiskowe
 .env
 .env.*
 !.env.example
 
+# Logi uruchomieniowe (np. services/backend/.uvicorn.log)
+*.log
+
 # Narzędzia testowe / pokrycie kodu
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
+coverage.xml
+coverage/
 .mypy_cache/
 .ruff_cache/
+
+# Testy mutacyjne (mutmut / StrykerJS): kopie kodu z mutantami i raporty
+mutants/
+.mutmut-cache
+.stryker-tmp/
+reports/
 
 # Pakowanie / build
 build/
 dist/
 *.egg-info/
+node_modules/
+
+# Playwright MCP (zrzuty ekranu i logi sesji przeglądarki)
+.playwright-mcp/
 
 # Edytory i system
 .idea/
 .vscode/
 *.swp
 .DS_Store
-
-.playwright-mcp/
-# Raporty pokrycia (pytest-cov / vitest --coverage)
-coverage.xml
-coverage/

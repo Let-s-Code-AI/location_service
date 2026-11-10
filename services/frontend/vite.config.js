@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite'
+import { configDefaults } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 
 // The backend has no CORS configured, so in dev we proxy /api/* to it.
@@ -8,6 +9,9 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: 'jsdom',
+    // Stryker (`npm run test:mutation`) copies the project, tests included,
+    // into .stryker-tmp/; a leftover sandbox must not be collected as tests.
+    exclude: [...configDefaults.exclude, '**/.stryker-tmp/**'],
     // globals: Testing Library auto-cleanup between tests needs a global afterEach.
     globals: true,
     // `npm run test:coverage` (CI quality gate). Only application code counts;

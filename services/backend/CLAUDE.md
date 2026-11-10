@@ -42,6 +42,6 @@ Alembic is the source of truth for the schema (`alembic/versions/`). `sql_app/in
 
 ## CI
 
-`.github/workflows/quality.yml` (in the repo root) runs `scripts/quality.sh` and `diff-cover --fail-under=90` on every pull request that touches `services/backend/`; see the Commands section above for what that includes.
+`.github/workflows/quality.yml` (in the repo root) runs `scripts/quality.sh` and `diff-cover --fail-under=90` on every pull request that touches `services/backend/`, then uploads `coverage.xml` to Codecov under the `backend` flag; see the Commands section above for what that includes.
 
 `.github/workflows/agent-review.yml` (in the repo root) runs an automated PR review with OpenAI Codex CLI using the repo-root `.agent/review-prompt.md`, `.agent/review-schema.json` and `.agent/post-review-comment.js`. The review prompt specifically looks for missing Alembic migrations, API-contract breaks, and bad queries, so model changes should ship with a migration.

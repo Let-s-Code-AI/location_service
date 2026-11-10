@@ -31,6 +31,7 @@ dev = [
     "httpx==0.27.2",
     "ruff==0.17.4",
     "diff-cover==11.0.1",
+    "mutmut==3.8.1",
 ]
 
 [tool.pytest.ini_options]
@@ -39,8 +40,8 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 
 # Coverage is collected by `pytest --cov` (scripts/quality.sh). The measured
-# surface is the application code: tests, migrations, one-off scripts and the
-# `alembic upgrade` entry point are left out.
+# surface is the application code: tests, migrations, one-off scripts, the
+# `alembic upgrade` entry point and mutmut's working copy are left out.
 [tool.coverage.run]
 source = ["."]
 omit = [
@@ -48,12 +49,25 @@ omit = [
     "alembic/*",
     "scripts/*",
     "venv/*",
+    "mutants/*",
     "sql_app/init_db.py",
 ]
 
 [tool.coverage.report]
 fail_under = 80
 show_missing = true
+
+# Mutation testing: `mutmut run` (see README, "Mutation testing"). mutmut copies
+# `source_paths` and `also_copy` into mutants/, mutates the sources and runs
+# pytest from that directory. The surface mirrors [tool.coverage.run].
+[tool.mutmut]
+source_paths = ["main.py", "sql_app"]
+# Imported by sql_app.database; settings only, nothing worth mutating.
+also_copy = ["config.py"]
+# Thin `alembic upgrade head` wrapper, also left out of coverage.
+do_not_mutate = ["sql_app/init_db.py"]
+# The Alembic check runs the CLI from the backend root, which mutants/ is not.
+pytest_add_cli_args = ["--ignore=tests/test_migrations.py"]
 
 [tool.ruff]
 target-version = "py311"

@@ -48,6 +48,6 @@ See [`services/backend/README.md`](services/backend/README.md) for configuration
 
 ## Continuous integration
 
-`.github/workflows/quality.yml` is the quality gate for pull requests. It runs per service and only for the services whose files changed (`dorny/paths-filter`): the backend job runs `services/backend/scripts/quality.sh` (ruff lint and formatting check, `pytest --cov` with a `fail_under` threshold) and then `diff-cover --fail-under=90` on the lines changed against `main`; the frontend job runs `npm ci`, `npm run lint`, `npm run test:coverage` (thresholds in `vite.config.js`) and `npm run build`. E2E tests are not part of CI.
+`.github/workflows/quality.yml` is the quality gate for pull requests. It runs per service and only for the services whose files changed (`dorny/paths-filter`): the backend job runs `services/backend/scripts/quality.sh` (ruff lint and formatting check, `pytest --cov` with a `fail_under` threshold) and then `diff-cover --fail-under=90` on the lines changed against `main`; the frontend job runs `npm ci`, `npm run lint`, `npm run test:coverage` (thresholds in `vite.config.js`) and `npm run build`. Both jobs upload coverage to Codecov (`CODECOV_TOKEN` repository secret; flags and carryforward configured in `.github/codecov.yml`). E2E tests are not part of CI.
 
 `.github/workflows/agent-review.yml` runs an automated AI code review on every pull request using the Codex CLI and the prompt in `.agent/review-prompt.md`. It requires an `OPENAI_API_KEY` repository secret.

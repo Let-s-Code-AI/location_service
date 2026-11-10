@@ -8,7 +8,8 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', 'coverage']),
+  // .stryker-tmp and reports are written by Stryker (`npm run test:mutation`).
+  globalIgnores(['dist', 'coverage', '.stryker-tmp', 'reports']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [
@@ -40,7 +41,7 @@ export default defineConfig([
   },
   {
     // Config files are executed by Node, not the browser.
-    files: ['vite.config.js', 'eslint.config.js'],
+    files: ['vite.config.js', 'eslint.config.js', 'stryker.config.js'],
     languageOptions: { globals: globals.node },
   },
 ])

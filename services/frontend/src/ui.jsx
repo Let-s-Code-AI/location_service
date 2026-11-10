@@ -1,5 +1,6 @@
 // Wspólne elementy UI (ikony i pole formularza) w stylu z lokalizacje.html.
 
+// Stryker disable all: SVG path data, no test can tell one path from another.
 const ICONS = {
   pin: [
     'M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z',
@@ -20,6 +21,7 @@ const ICONS = {
   mail: ['M3 5h18v14H3z', 'm3 7 9 6 9-6'],
   lock: ['M5 11h14v10H5z', 'M8 11V7a4 4 0 0 1 8 0v4'],
 }
+// Stryker restore all
 
 export function Icon({ name, size = 16, strokeWidth = 2 }) {
   return (

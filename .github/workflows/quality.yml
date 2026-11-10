@@ -2,6 +2,9 @@
 # Quality gate dla pull requestów: lint + testy z pokryciem, osobno dla backendu
 # i frontendu. Job "changes" (dorny/paths-filter) uruchamia tylko joby tych
 # serwisów, których pliki zmieniły się w PR (zmiana tego pliku uruchamia oba).
+# Raporty pokrycia trafiają do Codecov (secret CODECOV_TOKEN, konfiguracja
+# flag w .github/codecov.yml). Kroki `uses` ignorują defaults.run.working-directory,
+# stąd pełne ścieżki do plików z raportami.
 name: Quality gate
 
 on: pull_request
@@ -45,6 +48,12 @@ jobs:
           cache-dependency-path: services/backend/pyproject.toml
       - run: pip install -e ".[dev]"
       - run: ./scripts/quality.sh                 # ruff check + ruff format --check + pytest --cov (fail_under)
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: services/backend/coverage.xml
+          flags: backend
       - run: diff-cover coverage.xml --compare-branch=origin/main --fail-under=90
 
   frontend:
@@ -64,4 +73,10 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run test:coverage               # vitest --coverage (progi w vite.config.js)
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: services/frontend/coverage/lcov.info
+          flags: frontend
       - run: npm run build
