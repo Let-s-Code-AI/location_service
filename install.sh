@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Instalacja projektu: backend (venv + zależności + baza), frontend (npm) i opcjonalnie testy E2E.
-# Użycie: ./install.sh [--with-e2e]
-#   --with-e2e  dodatkowo instaluje zależności testów E2E (pytest + Playwright + Chromium)
+# Project installation: backend (venv + dependencies + database), frontend (npm), and optional E2E tests.
+# Usage: ./install.sh [--with-e2e]
+#   --with-e2e  additionally installs E2E test dependencies (pytest + Playwright + Chromium)
 
 set -euo pipefail
 
@@ -15,11 +15,11 @@ for arg in "$@"; do
     case "$arg" in
         --with-e2e) WITH_E2E=1 ;;
         -h|--help)
-            echo "Użycie: ./install.sh [--with-e2e]"
+            echo "Usage: ./install.sh [--with-e2e]"
             exit 0
             ;;
         *)
-            echo "❌ Nieznana opcja: $arg"
+            echo "❌ Unknown option: $arg"
             exit 1
             ;;
     esac
@@ -29,61 +29,61 @@ info()  { echo "▶ $*"; }
 ok()    { echo "✅ $*"; }
 fail()  { echo "❌ $*" >&2; exit 1; }
 
-# --- 1. Sprawdzenie wymaganych narzędzi -------------------------------------
-info "Sprawdzanie wymaganych narzędzi..."
+# --- 1. Checking required tools -----------------------------------------------
+info "Checking required tools..."
 
-command -v python3 >/dev/null 2>&1 || fail "Nie znaleziono python3 (wymagany Python 3.11+)."
+command -v python3 >/dev/null 2>&1 || fail "python3 not found (Python 3.11+ required)."
 python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' \
-    || fail "Wymagany Python 3.11+, a masz $(python3 --version 2>&1)."
+    || fail "Python 3.11+ required, you have $(python3 --version 2>&1)."
 
-command -v node >/dev/null 2>&1 || fail "Nie znaleziono node (wymagany Node.js 18+)."
-command -v npm  >/dev/null 2>&1 || fail "Nie znaleziono npm."
+command -v node >/dev/null 2>&1 || fail "node not found (Node.js 18+ required)."
+command -v npm  >/dev/null 2>&1 || fail "npm not found."
 
 ok "Python $(python3 --version 2>&1 | cut -d' ' -f2), Node $(node --version), npm $(npm --version)"
 
 # --- 2. Backend --------------------------------------------------------------
-info "Backend: środowisko wirtualne i zależności..."
+info "Backend: virtual environment and dependencies..."
 cd "$BACKEND_DIR"
 
 if [ ! -d venv ]; then
     python3 -m venv venv
-    ok "Utworzono venv/."
+    ok "Created venv/."
 else
-    ok "venv/ już istnieje."
+    ok "venv/ already exists."
 fi
 
 # shellcheck disable=SC1091
 source venv/bin/activate
 python -m pip install --quiet --upgrade pip
 python -m pip install --quiet -e ".[dev]"
-ok "Zainstalowano zależności backendu (wraz z narzędziami testowymi)."
+ok "Backend dependencies installed (including test tools)."
 
-# Plik .env: SECRET_KEY jest wymagany, więc generujemy losowy klucz.
+# .env file: SECRET_KEY is required, so generate a random key.
 if [ ! -f .env ]; then
     SECRET=$(python -c "import secrets; print(secrets.token_urlsafe(32))")
     sed "s|^SECRET_KEY=.*|SECRET_KEY=$SECRET|" .env.example > .env
-    ok "Utworzono .env z wygenerowanym SECRET_KEY."
+    ok "Created .env with generated SECRET_KEY."
 else
-    ok ".env już istnieje - pozostawiam bez zmian."
+    ok ".env already exists - leaving unchanged."
 fi
 
-info "Backend: inicjalizacja bazy danych (migracje Alembic)..."
+info "Backend: database initialization (Alembic migrations)..."
 python -m sql_app.init_db
 deactivate
 
 # --- 3. Frontend -------------------------------------------------------------
-info "Frontend: instalacja pakietów npm..."
+info "Frontend: installing npm packages..."
 cd "$FRONTEND_DIR"
 if [ -f package-lock.json ]; then
     npm ci
 else
     npm install
 fi
-ok "Zainstalowano zależności frontendu."
+ok "Frontend dependencies installed."
 
-# --- 4. E2E (opcjonalnie) ----------------------------------------------------
+# --- 4. E2E (optional) -------------------------------------------------------
 if [ "$WITH_E2E" -eq 1 ]; then
-    info "Testy E2E: środowisko wirtualne, Playwright i Chromium..."
+    info "E2E tests: virtual environment, Playwright and Chromium..."
     cd "$E2E_DIR"
     if [ ! -d venv ]; then
         python3 -m venv venv
@@ -94,8 +94,8 @@ if [ "$WITH_E2E" -eq 1 ]; then
     python -m pip install --quiet -r requirements.txt
     python -m playwright install chromium
     deactivate
-    ok "Testy E2E gotowe (uruchomienie: services/e2e -> pytest -q)."
+    ok "E2E tests ready (run: services/e2e -> pytest -q)."
 fi
 
 echo ""
-echo "🎉 Instalacja zakończona. Uruchom projekt poleceniem: ./start.sh"
+echo "🎉 Installation complete. Run the project with: ./start.sh"
