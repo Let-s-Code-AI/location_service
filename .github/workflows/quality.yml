@@ -1,10 +1,3 @@
-# .github/workflows/quality.yml
-# Quality gate for pull requests: lint + tests with coverage, separately for
-# the backend, the frontend and the repo-level scripts/. The "changes" job
-# (dorny/paths-filter) runs only the jobs whose files changed in the PR
-# (editing this file runs all of them). Coverage reports go to Codecov
-# (CODECOV_TOKEN secret, flags configured in .github/codecov.yml). `uses`
-# steps ignore defaults.run.working-directory, hence the full report paths.
 name: Quality gate
 
 on: pull_request

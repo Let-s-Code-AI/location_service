@@ -1,11 +1,3 @@
-# .github/workflows/mutation.yml
-# Mutation testing: mutmut for the backend, StrykerJS for the frontend. It is
-# not part of the pull-request gate (quality.yml): it takes longer and it
-# measures the tests, not the change. Runs on demand (workflow_dispatch) and
-# once a week. Thresholds: MUTATION_SCORE_MIN in services/backend/scripts/
-# mutation.sh and thresholds.break in services/frontend/stryker.config.js.
-# Stats and the HTML report are kept as workflow artifacts. `uses` steps
-# ignore defaults.run.working-directory, hence the full paths.
 name: Mutation testing
 
 

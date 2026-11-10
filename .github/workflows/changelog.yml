@@ -1,12 +1,3 @@
-# .github/workflows/changelog.yml
-# Deterministic changelog in the pull-request description. scripts/changelog.py
-# renders the Conventional Commits of the PR (base.sha..head.sha, merge
-# commits skipped, fixed section order, entries sorted and deduplicated) and
-# writes the result between <!-- changelog:start --> / <!-- changelog:end -->
-# in the PR body, appending the block when the markers are missing. Text
-# outside the markers is left alone and nothing is sent when the body is
-# already up to date, so re-runs are no-ops. Preview it locally with
-# `python3 scripts/changelog.py`.
 name: Changelog
 
 on:
