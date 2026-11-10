@@ -90,11 +90,30 @@ jobs:
       - run: pip install pytest
       - run: pytest scripts/tests -q               # scripts/changelog.py (stdlib only)
 
+  # Every commit in the PR must be a Conventional Commit; scripts/changelog.py
+  # relies on it to build the PR changelog. Merge commits are ignored.
+  commitlint:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0                          # needs the base..head history
+      - run: npm install --no-save @commitlint/cli@19 @commitlint/config-conventional@19
+      - run: >
+          npx commitlint
+          --extends @commitlint/config-conventional
+          --from ${{ github.event.pull_request.base.sha }}
+          --to ${{ github.event.pull_request.head.sha }}
+          --verbose
+
   # Single required status check for the main ruleset: passes when every
   # service job either succeeded or was skipped by the paths filter.
   ci-ok:
     if: always()
-    needs: [changes, backend, frontend, scripts]
+    needs: [changes, backend, frontend, scripts, commitlint]
     runs-on: ubuntu-latest
     steps:
       - name: Check job results
