@@ -89,3 +89,18 @@ jobs:
           python-version: "3.11"
       - run: pip install pytest
       - run: pytest scripts/tests -q               # scripts/changelog.py (stdlib only)
+
+  # Single required status check for the main ruleset: passes when every
+  # service job either succeeded or was skipped by the paths filter.
+  ci-ok:
+    if: always()
+    needs: [changes, backend, frontend, scripts]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check job results
+        run: |
+          echo '${{ toJSON(needs) }}'
+          if [[ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            echo "At least one quality job failed or was cancelled"
+            exit 1
+          fi
