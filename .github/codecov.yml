@@ -1,0 +1,32 @@
+# .github/codecov.yml
+# Raporty wysyłają joby backend/frontend z .github/workflows/quality.yml
+# (codecov/codecov-action, secret CODECOV_TOKEN).
+#
+# Flagi mają carryforward, bo paths-filter uruchamia tylko job tego serwisu,
+# którego pliki zmieniły się w PR - brakujący raport drugiego serwisu jest
+# wtedy brany z ostatniego uploadu na gałęzi bazowej zamiast liczyć się jako 0.
+#
+# Statusy są informacyjne: progi egzekwuje już CI (fail_under w pyproject.toml,
+# thresholds w vite.config.js, diff-cover --fail-under=90 dla zmienionych linii).
+
+coverage:
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
+
+flags:
+  backend:
+    paths:
+      - services/backend/
+    carryforward: true
+  frontend:
+    paths:
+      - services/frontend/
+    carryforward: true
+
+comment:
+  layout: "condensed_header, flags, diff"
