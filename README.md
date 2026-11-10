@@ -12,6 +12,7 @@ A real-estate listings application organized as a **monorepo**: every deployable
 │   └── e2e/                 # End-to-end tests: pytest + Playwright (Python)
 ├── .github/workflows/       # CI (quality gate + automated PR review)
 ├── .agent/                  # Prompt, schema and script used by the PR review
+├── scripts/                 # Repo-level tooling: deterministic PR changelog (+ its tests)
 └── user_stories*.md         # Requirements notes (in Polish)
 ```
 
@@ -51,5 +52,7 @@ See [`services/backend/README.md`](services/backend/README.md) for configuration
 `.github/workflows/quality.yml` is the quality gate for pull requests. It runs per service and only for the services whose files changed (`dorny/paths-filter`): the backend job runs `services/backend/scripts/quality.sh` (ruff lint and formatting check, `pytest --cov` with a `fail_under` threshold) and then `diff-cover --fail-under=90` on the lines changed against `main`; the frontend job runs `npm ci`, `npm run lint`, `npm run test:coverage` (thresholds in `vite.config.js`) and `npm run build`. Both jobs upload coverage to Codecov (`CODECOV_TOKEN` repository secret; flags and carryforward configured in `.github/codecov.yml`). E2E tests are not part of CI.
 
 `.github/workflows/mutation.yml` runs mutation testing on demand and weekly: `services/backend/scripts/mutation.sh` (mutmut) and `npm run test:mutation` in the frontend (StrykerJS). Each fails below its minimum mutation score (`MUTATION_SCORE_MIN` in the script, `thresholds.break` in `services/frontend/stryker.config.js`) and keeps its report as a workflow artifact. The service READMEs explain how to run them locally.
+
+`.github/workflows/changelog.yml` keeps a deterministic changelog in the pull-request description. On every push to a PR, `scripts/changelog.py` renders the Conventional Commits of the PR (`base.sha..head.sha`, merge commits skipped) as Markdown and writes it between `<!-- changelog:start -->` and `<!-- changelog:end -->` in the PR body, appending the block when the markers are missing. The output depends only on the commit messages (fixed section order, entries sorted and deduplicated, no SHAs, authors or dates), so re-running it on the same commits changes nothing. Preview it locally with `python3 scripts/changelog.py` (`origin/main..HEAD`); its tests run in the `scripts` job of the quality gate (`pytest scripts/tests`).
 
 `.github/workflows/agent-review.yml` runs an automated AI code review on every pull request using the Codex CLI and the prompt in `.agent/review-prompt.md`. It requires an `OPENAI_API_KEY` repository secret.
