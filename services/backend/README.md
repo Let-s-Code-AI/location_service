@@ -202,7 +202,7 @@ services/backend/
 │   ├── schemas.py           # Pydantic request/response schemas
 │   ├── init_db.py           # Runs `alembic upgrade head`
 │   └── schema.sql           # Reference SQL schema (not used at runtime)
-├── scripts/                 # gen_model_docs.py, seed_listings.py
+├── scripts/                 # gen_model_docs.py, seed_listings.py, quality.sh (CI gate)
 ├── alembic/                 # Migration environment and versions
 ├── alembic.ini
 ├── setup.sh                 # Virtualenv + dependency installation
@@ -210,6 +210,10 @@ services/backend/
 ├── .env.example
 └── .claude/                 # Claude Code settings
 ```
+
+## Quality gate (CI)
+
+`.github/workflows/quality.yml` (repo root) runs on every pull request that touches `services/backend/`: `./scripts/quality.sh` (ruff lint, formatting check and `pytest --cov` with the `fail_under` threshold from `pyproject.toml`), then `diff-cover coverage.xml --compare-branch=origin/main --fail-under=90`, so the lines a PR adds or changes need 90% coverage. Run the script locally before pushing; `ruff check --fix . && ruff format .` fixes most lint findings.
 
 ## Automated pull-request review
 
@@ -219,4 +223,4 @@ services/backend/
 
 - `sql_app/database.py` creates the engine with `echo=True`, which logs every SQL statement. Turn it off before deploying to production.
 - Local database files (`*.db`) and `.env` are git-ignored.
-- Tests live in `tests/` and run with `pytest -q` (in-memory SQLite).
+- Tests live in `tests/` and run with `pytest -q` (in-memory SQLite); see *Quality gate (CI)* above for lint and coverage.

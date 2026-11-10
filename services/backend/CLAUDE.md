@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Backend service (`services/backend/`) of a Polish real-estate listings app: async FastAPI + SQLAlchemy 2.0 (aiosqlite) REST API. The frontend lives separately in `services/frontend/`. Python >= 3.11. Project docs (`user_stories*.md`, in the repo root) are in Polish. New code comments must be in English (see the repo-root `CLAUDE.md`), but many existing ones are still in Polish. Tests live in `tests/` (pytest); no linter is configured.
+Backend service (`services/backend/`) of a Polish real-estate listings app: async FastAPI + SQLAlchemy 2.0 (aiosqlite) REST API. The frontend lives separately in `services/frontend/`. Python >= 3.11. Project docs (`user_stories*.md`, in the repo root) are in Polish. New code comments must be in English (see the repo-root `CLAUDE.md`), but many existing ones are still in Polish. Tests live in `tests/` (pytest). ruff is the linter and formatter (`[tool.ruff]` in `pyproject.toml`; `alembic/versions` is excluded).
 
 ## Commands
 
@@ -13,8 +13,11 @@ Backend service (`services/backend/`) of a Polish real-estate listings app: asyn
 source venv/bin/activate
 python -m sql_app.init_db        # create/upgrade DB: runs `alembic upgrade head`
 uvicorn main:app --reload        # run the API (docs at /docs)
-pip install -e ".[dev]"          # test deps: pytest, pytest-asyncio, httpx
+pip install -e ".[dev]"          # dev deps: pytest, pytest-asyncio, pytest-cov, httpx, ruff, diff-cover
 pytest -q                        # run tests (in-memory SQLite, see tests/conftest.py)
+ruff check --fix . && ruff format .   # lint + format; CI rejects unformatted code
+./scripts/quality.sh             # the CI gate: ruff check, ruff format --check, pytest --cov (fail_under = 80); writes coverage.xml
+diff-cover coverage.xml --compare-branch=origin/main --fail-under=90   # coverage of lines changed vs main (also run in CI)
 
 alembic revision --autogenerate -m "message"   # generate a migration after changing sql_app/models.py
 alembic upgrade head
@@ -38,5 +41,7 @@ Alembic is the source of truth for the schema (`alembic/versions/`). `sql_app/in
 `alembic/env.py` takes the URL from `config.settings` and rewrites `sqlite+aiosqlite` → `sqlite`, because migrations run on a **sync** engine while the app uses the async driver. It also sets `render_as_batch=True` (needed for SQLite `ALTER TABLE`), and imports `sql_app.models` so autogenerate sees all tables — new models must be importable via that module.
 
 ## CI
+
+`.github/workflows/quality.yml` (in the repo root) runs `scripts/quality.sh` and `diff-cover --fail-under=90` on every pull request that touches `services/backend/`; see the Commands section above for what that includes.
 
 `.github/workflows/agent-review.yml` (in the repo root) runs an automated PR review with OpenAI Codex CLI using the repo-root `.agent/review-prompt.md`, `.agent/review-schema.json` and `.agent/post-review-comment.js`. The review prompt specifically looks for missing Alembic migrations, API-contract breaks, and bad queries, so model changes should ship with a migration.

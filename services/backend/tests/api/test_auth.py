@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import jwt
 
@@ -48,6 +48,7 @@ async def test_register_rejects_invalid_email(client):
 
 async def test_password_is_stored_hashed(client, db):
     from sqlalchemy import select
+
     from sql_app import models
 
     await client.post("/auth/register", json=USER)
@@ -78,7 +79,9 @@ async def test_login_wrong_password_returns_401(client):
 
 
 async def test_login_unknown_email_returns_same_401(client):
-    response = await client.post("/auth/login", data=login_data(email="nikt@example.com"))
+    response = await client.post(
+        "/auth/login", data=login_data(email="nikt@example.com")
+    )
 
     assert response.status_code == 401
     assert response.json()["detail"] == "Invalid credentials"
@@ -88,7 +91,9 @@ async def test_me_returns_current_user_with_valid_token(client):
     await client.post("/auth/register", json=USER)
     token = (await client.post("/auth/login", data=login_data())).json()["access_token"]
 
-    response = await client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+    response = await client.get(
+        "/auth/me", headers={"Authorization": f"Bearer {token}"}
+    )
 
     assert response.status_code == 200
     assert response.json()["email"] == USER["email"]
@@ -109,12 +114,14 @@ async def test_me_with_garbage_token_returns_401(client):
 async def test_me_with_expired_token_returns_401(client):
     await client.post("/auth/register", json=USER)
     expired = jwt.encode(
-        {"sub": "1", "exp": datetime.now(timezone.utc) - timedelta(seconds=1)},
+        {"sub": "1", "exp": datetime.now(UTC) - timedelta(seconds=1)},
         settings.secret_key,
         algorithm=ALGORITHM,
     )
 
-    response = await client.get("/auth/me", headers={"Authorization": f"Bearer {expired}"})
+    response = await client.get(
+        "/auth/me", headers={"Authorization": f"Bearer {expired}"}
+    )
 
     assert response.status_code == 401
 
@@ -122,12 +129,14 @@ async def test_me_with_expired_token_returns_401(client):
 async def test_me_with_token_signed_by_other_key_returns_401(client):
     await client.post("/auth/register", json=USER)
     forged = jwt.encode(
-        {"sub": "1", "exp": datetime.now(timezone.utc) + timedelta(minutes=5)},
+        {"sub": "1", "exp": datetime.now(UTC) + timedelta(minutes=5)},
         "inny-klucz",
         algorithm=ALGORITHM,
     )
 
-    response = await client.get("/auth/me", headers={"Authorization": f"Bearer {forged}"})
+    response = await client.get(
+        "/auth/me", headers={"Authorization": f"Bearer {forged}"}
+    )
 
     assert response.status_code == 401
 
@@ -135,7 +144,9 @@ async def test_me_with_token_signed_by_other_key_returns_401(client):
 async def test_me_with_token_for_missing_user_returns_401(client):
     token = create_access_token(user_id=999)
 
-    response = await client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+    response = await client.get(
+        "/auth/me", headers={"Authorization": f"Bearer {token}"}
+    )
 
     assert response.status_code == 401
 

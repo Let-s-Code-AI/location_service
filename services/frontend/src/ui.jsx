@@ -1,6 +1,6 @@
 // Wspólne elementy UI (ikony i pole formularza) w stylu z lokalizacje.html.
 
-export const ICONS = {
+const ICONS = {
   pin: [
     'M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z',
     'M12 9.5m-2.5 0a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0-5 0',

@@ -41,3 +41,6 @@ dist/
 .DS_Store
 
 .playwright-mcp/
+# Raporty pokrycia (pytest-cov / vitest --coverage)
+coverage.xml
+coverage/

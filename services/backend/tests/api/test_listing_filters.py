@@ -1,4 +1,5 @@
 """GET /listings/: filtry zakresów ceny, ceny za m², metrażu oraz pokoi."""
+
 import pytest
 
 
@@ -17,18 +18,28 @@ RANGES = [
 
 
 @pytest.mark.parametrize("param, field, values", RANGES)
-async def test_range_filter_min_max_and_both(client, make_listing, param, field, values):
+async def test_range_filter_min_max_and_both(
+    client, make_listing, param, field, values
+):
     low, mid, high = [await make_listing(**{field: v}) for v in values]
 
-    assert await ids(client, **{f"{param}_min": values[1]}) == ({mid.listing_id, high.listing_id}, 2)
-    assert await ids(client, **{f"{param}_max": values[1]}) == ({low.listing_id, mid.listing_id}, 2)
+    assert await ids(client, **{f"{param}_min": values[1]}) == (
+        {mid.listing_id, high.listing_id},
+        2,
+    )
+    assert await ids(client, **{f"{param}_max": values[1]}) == (
+        {low.listing_id, mid.listing_id},
+        2,
+    )
     assert await ids(
         client, **{f"{param}_min": values[1], f"{param}_max": values[1]}
     ) == ({mid.listing_id}, 1)
 
 
 @pytest.mark.parametrize("param, field, values", RANGES)
-async def test_range_filter_excludes_null_only_when_active(client, make_listing, param, field, values):
+async def test_range_filter_excludes_null_only_when_active(
+    client, make_listing, param, field, values
+):
     with_value = await make_listing(**{field: values[1]})
     without_value = await make_listing()
 
@@ -45,9 +56,15 @@ async def test_rooms_single_and_multiple(client, make_listing):
 
 
 async def test_combined_filters(client, make_listing):
-    match = await make_listing(rooms=2, area=50.0, price_total_zl=500000.0, price_sqm_zl=10000.0)
-    await make_listing(rooms=2, area=50.0, price_total_zl=900000.0, price_sqm_zl=18000.0)
-    await make_listing(rooms=4, area=50.0, price_total_zl=500000.0, price_sqm_zl=10000.0)
+    match = await make_listing(
+        rooms=2, area=50.0, price_total_zl=500000.0, price_sqm_zl=10000.0
+    )
+    await make_listing(
+        rooms=2, area=50.0, price_total_zl=900000.0, price_sqm_zl=18000.0
+    )
+    await make_listing(
+        rooms=4, area=50.0, price_total_zl=500000.0, price_sqm_zl=10000.0
+    )
 
     assert await ids(
         client, rooms=2, area_min=40, price_total_max=600000, price_sqm_max=12000
@@ -66,10 +83,14 @@ async def test_total_reflects_filters_not_page(client, make_listing):
 
 @pytest.mark.parametrize("param", ["price_total", "price_sqm", "area"])
 async def test_min_greater_than_max_returns_422_with_message(client, param):
-    response = await client.get("/listings/", params={f"{param}_min": 10, f"{param}_max": 5})
+    response = await client.get(
+        "/listings/", params={f"{param}_min": 10, f"{param}_max": 5}
+    )
 
     assert response.status_code == 422
-    assert response.json()["detail"] == f"{param}_min nie może być większe niż {param}_max"
+    assert (
+        response.json()["detail"] == f"{param}_min nie może być większe niż {param}_max"
+    )
 
 
 @pytest.mark.parametrize(
@@ -102,7 +123,10 @@ async def test_city_and_district_filter(client, make_listing):
     podgorze = await make_listing(city="Kraków", city_district="Podgórze")
     await make_listing(city="Kraków", city_district="Krowodrza")
 
-    assert await ids(client, city="Kraków", city_district="Podgórze") == ({podgorze.listing_id}, 1)
+    assert await ids(client, city="Kraków", city_district="Podgórze") == (
+        {podgorze.listing_id},
+        1,
+    )
     _, total = await ids(client, city_district="Krowodrza")
     assert total == 1
 
@@ -119,4 +143,7 @@ async def test_city_combined_with_price(client, make_listing):
     await make_listing(city="Kraków", price_total_zl=900000.0)
     await make_listing(city="Warszawa", price_total_zl=500000.0)
 
-    assert await ids(client, city="Kraków", price_total_max=600000) == ({match.listing_id}, 1)
+    assert await ids(client, city="Kraków", price_total_max=600000) == (
+        {match.listing_id},
+        1,
+    )

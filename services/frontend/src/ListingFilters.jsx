@@ -2,7 +2,7 @@
 import Autocomplete from './Autocomplete.jsx'
 import { RANGES, isEmptyFilters, pluralOffers } from './listingFilters.js'
 
-export const ROOM_OPTIONS = [1, 2, 3, 4, 5]
+const ROOM_OPTIONS = [1, 2, 3, 4, 5]
 
 const ENDS = [
   { end: 'min', placeholder: 'od' },

@@ -1,0 +1,67 @@
+# .github/workflows/quality.yml
+# Quality gate dla pull requestów: lint + testy z pokryciem, osobno dla backendu
+# i frontendu. Job "changes" (dorny/paths-filter) uruchamia tylko joby tych
+# serwisów, których pliki zmieniły się w PR (zmiana tego pliku uruchamia oba).
+name: Quality gate
+
+on: pull_request
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'services/backend/**'
+              - '.github/workflows/quality.yml'
+            frontend:
+              - 'services/frontend/**'
+              - '.github/workflows/quality.yml'
+
+  backend:
+    if: needs.changes.outputs.backend == 'true'
+    needs: changes
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/backend
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0                          # diff-cover potrzebuje historii main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: services/backend/pyproject.toml
+      - run: pip install -e ".[dev]"
+      - run: ./scripts/quality.sh                 # ruff check + ruff format --check + pytest --cov (fail_under)
+      - run: diff-cover coverage.xml --compare-branch=origin/main --fail-under=90
+
+  frontend:
+    if: needs.changes.outputs.frontend == 'true'
+    needs: changes
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: services/frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test:coverage               # vitest --coverage (progi w vite.config.js)
+      - run: npm run build

@@ -17,11 +17,15 @@ npm run dev        # http://localhost:5173
 
 Other scripts: `npm run build` (production bundle in `dist/`), `npm run preview`.
 
-## Tests
+## Tests and lint
 
 ```bash
-npm test           # Vitest + Testing Library in jsdom, single run
+npm test                # Vitest + Testing Library in jsdom, single run
+npm run test:coverage   # the same with V8 coverage; fails below the thresholds in vite.config.js
+npm run lint            # ESLint (flat config in eslint.config.js)
 ```
+
+These, plus `npm run build`, are what the CI quality gate (`.github/workflows/quality.yml`) runs for every pull request that touches `services/frontend/`.
 
 Test files sit next to the code (`src/*.test.js`, `src/*.test.jsx`). Components get their data through props or a mocked `./api.js`, so the tests do not need a running backend.
 
@@ -39,7 +43,8 @@ The API client lives in `src/api.js`.
 
 ```
 index.html
-vite.config.js      # React plugin, /api proxy, Vitest config
+vite.config.js      # React plugin, /api proxy, Vitest config + coverage thresholds
+eslint.config.js    # ESLint flat config
 src/
 ├── main.jsx        # entry point
 ├── App.jsx         # view switch (Lokalizacje / Oferty) + shared toolbar, locations list and add form

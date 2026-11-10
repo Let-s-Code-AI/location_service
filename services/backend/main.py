@@ -1,14 +1,15 @@
 import math
+from typing import Literal
 
 import jwt
-from sqlalchemy import select, delete, distinct, func, or_
-from fastapi import FastAPI, Depends, HTTPException, Query, status
+from fastapi import Depends, FastAPI, HTTPException, Query, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from sqlalchemy import delete, distinct, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from typing import List, Literal, Optional
-from sql_app.database import get_db
+
 from sql_app import models, schemas
+from sql_app.database import get_db
 from sql_app.security import (
     create_access_token,
     decode_access_token,
@@ -38,7 +39,7 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from None
     user = await db.get(models.User, user_id)
     if user is None or not user.is_active:
         raise HTTPException(
@@ -55,7 +56,9 @@ async def root():
 
 
 # Auth endpoints
-@app.post("/auth/register", response_model=schemas.User, status_code=status.HTTP_201_CREATED)
+@app.post(
+    "/auth/register", response_model=schemas.User, status_code=status.HTTP_201_CREATED
+)
 async def register(
     data: schemas.UserCreate,
     db: AsyncSession = Depends(get_db),
@@ -96,10 +99,12 @@ async def read_me(current_user: models.User = Depends(get_current_user)):
 
 
 # Listing endpoints
-def _range_conditions(column, name: str, low: Optional[float], high: Optional[float]) -> list:
+def _range_conditions(column, name: str, low: float | None, high: float | None) -> list:
     for value in (low, high):
         if value is not None and not math.isfinite(value):
-            raise HTTPException(status_code=422, detail=f"{name} musi być skończoną liczbą")
+            raise HTTPException(
+                status_code=422, detail=f"{name} musi być skończoną liczbą"
+            )
     if low is not None and high is not None and low > high:
         raise HTTPException(
             status_code=422, detail=f"{name}_min nie może być większe niż {name}_max"
@@ -117,23 +122,32 @@ def _escape_like(value: str) -> str:
 
 
 def listing_filters(
-    q: Optional[str] = Query(None, max_length=100),
-    price_total_min: Optional[float] = Query(None, ge=0),
-    price_total_max: Optional[float] = Query(None, ge=0),
-    price_sqm_min: Optional[float] = Query(None, ge=0),
-    price_sqm_max: Optional[float] = Query(None, ge=0),
-    area_min: Optional[float] = Query(None, ge=0),
-    area_max: Optional[float] = Query(None, ge=0),
-    rooms: List[int] = Query([]),
-    city: Optional[str] = Query(None, max_length=255),
-    city_district: Optional[str] = Query(None, max_length=255),
+    q: str | None = Query(None, max_length=100),
+    price_total_min: float | None = Query(None, ge=0),
+    price_total_max: float | None = Query(None, ge=0),
+    price_sqm_min: float | None = Query(None, ge=0),
+    price_sqm_max: float | None = Query(None, ge=0),
+    area_min: float | None = Query(None, ge=0),
+    area_max: float | None = Query(None, ge=0),
+    rooms: list[int] = Query([]),
+    city: str | None = Query(None, max_length=255),
+    city_district: str | None = Query(None, max_length=255),
 ) -> list:
     """Builds SQL conditions for GET /listings/. A NULL in a filtered column excludes the row."""
     if any(r < 1 for r in rooms):
-        raise HTTPException(status_code=422, detail="rooms musi być liczbą większą od 0")
+        raise HTTPException(
+            status_code=422, detail="rooms musi być liczbą większą od 0"
+        )
     conditions = [
-        *_range_conditions(models.Listing.price_total_zl, "price_total", price_total_min, price_total_max),
-        *_range_conditions(models.Listing.price_sqm_zl, "price_sqm", price_sqm_min, price_sqm_max),
+        *_range_conditions(
+            models.Listing.price_total_zl,
+            "price_total",
+            price_total_min,
+            price_total_max,
+        ),
+        *_range_conditions(
+            models.Listing.price_sqm_zl, "price_sqm", price_sqm_min, price_sqm_max
+        ),
         *_range_conditions(models.Listing.area, "area", area_min, area_max),
     ]
     if rooms:
@@ -195,11 +209,11 @@ async def read_listings(
 
 
 # Declared before any future /listings/{listing_id}, so "suggestions" never hits the path param.
-@app.get("/listings/suggestions", response_model=List[str])
+@app.get("/listings/suggestions", response_model=list[str])
 async def suggest_listing_values(
     field: Literal["city", "city_district"],
     q: str = Query("", max_length=100),
-    city: Optional[str] = Query(None, max_length=255),
+    city: str | None = Query(None, max_length=255),
     limit: int = Query(10, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
 ):
@@ -232,23 +246,16 @@ async def create_location(
     return db_location
 
 
-@app.get("/locations/", response_model=List[schemas.Location])
+@app.get("/locations/", response_model=list[schemas.Location])
 async def read_locations(
-    skip: int = 0,
-    limit: int = 100,
-    db: AsyncSession = Depends(get_db)
+    skip: int = 0, limit: int = 100, db: AsyncSession = Depends(get_db)
 ):
-    result = await db.execute(
-        select(models.Location).offset(skip).limit(limit)
-    )
+    result = await db.execute(select(models.Location).offset(skip).limit(limit))
     return result.scalars().all()
 
 
 @app.get("/locations/{location_id}", response_model=schemas.Location)
-async def read_location(
-    location_id: int,
-    db: AsyncSession = Depends(get_db)
-):
+async def read_location(location_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(models.Location).where(models.Location.location_id == location_id)
     )
