@@ -23,11 +23,14 @@ Other scripts: `npm run build` (production bundle in `dist/`), `npm run preview`
 npm test                # Vitest + Testing Library in jsdom, single run
 npm run test:coverage   # the same with V8 coverage; fails below the thresholds in vite.config.js
 npm run lint            # ESLint (flat config in eslint.config.js)
+npm run test:mutation   # StrykerJS mutation testing; HTML report in reports/mutation/mutation.html
 ```
 
 These, plus `npm run build`, are what the CI quality gate (`.github/workflows/quality.yml`) runs for every pull request that touches `services/frontend/`.
 
 Test files sit next to the code (`src/*.test.js`, `src/*.test.jsx`). Components get their data through props or a mocked `./api.js`, so the tests do not need a running backend.
+
+`npm run test:mutation` runs [StrykerJS](https://stryker-mutator.io/) (`stryker.config.js`): it plants small changes (*mutants*) in `src/` and expects the Vitest suite to fail for each one; a surviving mutant shows behaviour the tests do not assert. The mutated files are the ones coverage measures, and mutants in files without unit tests (`App.jsx`, `Login.jsx`, `api.js`) count as survived, so the total score stays low until those get tests. The run fails below `thresholds.break` in `stryker.config.js`, takes about half a minute and is run by `.github/workflows/mutation.yml` (manually and weekly), not by the PR gate. The SVG path data in `ui.jsx` is excluded with a `Stryker disable` comment. Stryker works in `.stryker-tmp/` and writes `reports/`; both are git-ignored and ignored by ESLint and Vitest.
 
 ## Backend connection
 
@@ -45,6 +48,7 @@ The API client lives in `src/api.js`.
 index.html
 vite.config.js      # React plugin, /api proxy, Vitest config + coverage thresholds
 eslint.config.js    # ESLint flat config
+stryker.config.js   # StrykerJS mutation testing config
 src/
 ├── main.jsx        # entry point
 ├── App.jsx         # view switch (Lokalizacje / Oferty) + shared toolbar, locations list and add form

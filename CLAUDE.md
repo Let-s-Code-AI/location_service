@@ -23,11 +23,13 @@ pytest -q
 pytest tests/api/test_locations.py::test_name -q
 ruff check --fix . && ruff format .   # lint + format (config in pyproject.toml)
 ./scripts/quality.sh                  # what CI runs: ruff check, ruff format --check, pytest --cov (fail_under); writes coverage.xml
+./scripts/mutation.sh                 # mutation testing: mutmut run, fails below MUTATION_SCORE_MIN (default 75); survivors: mutmut results / show <name> / browse
 alembic revision --autogenerate -m "msg" && alembic upgrade head
 
 # frontend (services/frontend)
 npm run dev | npm run build | npm test
 npm run lint | npm run test:coverage  # what CI runs (plus npm run build)
+npm run test:mutation                 # StrykerJS mutation testing (stryker.config.js); HTML report in reports/mutation/
 
 # e2e (services/e2e, own venv via ./setup.sh)
 pytest -q [--headed] [-k login]
@@ -35,6 +37,8 @@ E2E_BASE_URL=http://127.0.0.1:5173 pytest -q   # test an already-running app ins
 ```
 
 CI (`.github/workflows/quality.yml`, pull requests only) is a per-service quality gate. A `changes` job (`dorny/paths-filter`) runs the `backend` job only when `services/backend/**` changed and the `frontend` job only when `services/frontend/**` changed; editing the workflow itself runs both. Backend: `scripts/quality.sh` (ruff check, ruff format --check, `pytest --cov` with `fail_under = 80` from `pyproject.toml`), then `diff-cover coverage.xml --compare-branch=origin/main --fail-under=90`, so lines added or changed in a PR need 90% coverage even though the whole-project floor is lower. Frontend: `npm ci`, `npm run lint`, `npm run test:coverage` (thresholds in `vite.config.js`), `npm run build`. Both jobs upload their coverage report to Codecov (`codecov/codecov-action@v5`, needs the `CODECOV_TOKEN` secret) under the `backend` / `frontend` flags; `.github/codecov.yml` sets `carryforward` on those flags, because a PR that touches one service uploads only that service's report, and keeps the Codecov statuses informational since the thresholds are enforced in CI. E2E tests do not run in CI.
+
+Mutation testing (`.github/workflows/mutation.yml`: manual `workflow_dispatch` plus a weekly schedule, deliberately not part of the PR gate) runs `services/backend/scripts/mutation.sh` (mutmut, configured in `[tool.mutmut]` in `pyproject.toml`, fails below `MUTATION_SCORE_MIN`, default 75%) and `npm run test:mutation` in the frontend (StrykerJS with the Vitest runner, `stryker.config.js`, fails below `thresholds.break`). Both mutate the same files that coverage measures. Their working copies and reports (`mutants/`, `.stryker-tmp/`, `reports/`) are git-ignored and excluded from coverage, ESLint and Vitest collection. A surviving mutant means no test asserts that behaviour: fix it by tightening a test, not by lowering the threshold.
 
 ## Cross-service architecture
 

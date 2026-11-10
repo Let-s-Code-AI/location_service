@@ -13,11 +13,13 @@ Backend service (`services/backend/`) of a Polish real-estate listings app: asyn
 source venv/bin/activate
 python -m sql_app.init_db        # create/upgrade DB: runs `alembic upgrade head`
 uvicorn main:app --reload        # run the API (docs at /docs)
-pip install -e ".[dev]"          # dev deps: pytest, pytest-asyncio, pytest-cov, httpx, ruff, diff-cover
+pip install -e ".[dev]"          # dev deps: pytest, pytest-asyncio, pytest-cov, httpx, ruff, diff-cover, mutmut
 pytest -q                        # run tests (in-memory SQLite, see tests/conftest.py)
 ruff check --fix . && ruff format .   # lint + format; CI rejects unformatted code
 ./scripts/quality.sh             # the CI gate: ruff check, ruff format --check, pytest --cov (fail_under = 80); writes coverage.xml
 diff-cover coverage.xml --compare-branch=origin/main --fail-under=90   # coverage of lines changed vs main (also run in CI)
+./scripts/mutation.sh            # mutation testing: mutmut run, fails below MUTATION_SCORE_MIN (default 75%); config in [tool.mutmut]
+mutmut results                   # surviving mutants; `mutmut show <name>` prints one as a diff, `mutmut browse` opens the TUI
 
 alembic revision --autogenerate -m "message"   # generate a migration after changing sql_app/models.py
 alembic upgrade head
@@ -43,5 +45,7 @@ Alembic is the source of truth for the schema (`alembic/versions/`). `sql_app/in
 ## CI
 
 `.github/workflows/quality.yml` (in the repo root) runs `scripts/quality.sh` and `diff-cover --fail-under=90` on every pull request that touches `services/backend/`, then uploads `coverage.xml` to Codecov under the `backend` flag; see the Commands section above for what that includes.
+
+`.github/workflows/mutation.yml` runs `scripts/mutation.sh` (mutmut) on demand and weekly; it is not part of the PR gate. mutmut copies `main.py`, `config.py`, `sql_app/` and `tests/` into `mutants/` (git-ignored, omitted from coverage) and runs pytest there, so `tests/test_migrations.py` is skipped: it runs the Alembic CLI from the backend root. `sql_app/init_db.py` is not mutated, matching the coverage omit list.
 
 `.github/workflows/agent-review.yml` (in the repo root) runs an automated PR review with OpenAI Codex CLI using the repo-root `.agent/review-prompt.md`, `.agent/review-schema.json` and `.agent/post-review-comment.js`. The review prompt specifically looks for missing Alembic migrations, API-contract breaks, and bad queries, so model changes should ship with a migration.
