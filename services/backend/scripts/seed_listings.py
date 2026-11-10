@@ -6,6 +6,7 @@ Bazę trzeba wcześniej zmigrować (`alembic upgrade head` albo ./start.sh).
 Użycie (z katalogu services/backend):
     venv/bin/python scripts/seed_listings.py
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -47,7 +48,9 @@ LISTINGS = [
 
 async def main() -> None:
     engine = create_async_engine(settings.database_url)
-    session_factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    session_factory = async_sessionmaker(
+        engine, class_=AsyncSession, expire_on_commit=False
+    )
     async with session_factory() as db:
         if await db.scalar(select(func.count()).select_from(models.Listing)):
             print("Tabela listing nie jest pusta — pomijam seed.")
@@ -56,7 +59,11 @@ async def main() -> None:
 
         for city, district, street, rooms, area, price in LISTINGS:
             location = models.Location(city=city, city_district=district, street=street)
-            building, owner, features = models.Building(), models.Owner(), models.Features()
+            building, owner, features = (
+                models.Building(),
+                models.Owner(),
+                models.Features(),
+            )
             db.add_all([location, building, owner, features])
             await db.flush()
             db.add(

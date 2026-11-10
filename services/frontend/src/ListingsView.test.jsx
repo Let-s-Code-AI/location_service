@@ -47,6 +47,10 @@ test('pierwsze renderowanie pobiera oferty bez filtrów i pokazuje licznik', asy
 })
 
 test('zmiana filtra pobiera oferty po debounce i aktualizuje licznik', async () => {
+  // Deterministic clock for this test only: with shouldAdvanceTime the fake
+  // clock also moves with real time, so on a slow CI runner the 300 ms debounce
+  // could fire during the 299 ms advance below and the "not yet called" check flakes.
+  vi.useFakeTimers({ shouldAdvanceTime: false })
   await renderView()
   listListings.mockResolvedValueOnce({ ...PAGE, items: [listing(3, 'Kraków')], total: 1 })
 

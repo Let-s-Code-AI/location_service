@@ -1,14 +1,17 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 
 # Import Base and models
 from config import settings
+
+# Side-effect import: registers the ORM tables on Base.metadata. Without it
+# autogenerate sees an empty metadata and emits DROP TABLE for every table.
+# The noqa keeps `ruff check --fix` from removing it again as unused.
+from sql_app import models  # noqa: F401
 from sql_app.database import Base
-from sql_app import models
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -76,9 +79,9 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, 
+            connection=connection,
             target_metadata=target_metadata,
-            render_as_batch=True  # Required for SQLite
+            render_as_batch=True,  # Required for SQLite
         )
 
         with context.begin_transaction():

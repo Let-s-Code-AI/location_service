@@ -1,17 +1,17 @@
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from datetime import date
-from typing import List, Optional
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 # Location schemas
 class LocationBase(BaseModel):
-    city: Optional[str] = None
-    locality: Optional[str] = None
-    city_district: Optional[str] = None
-    street: Optional[str] = None
-    full_address: Optional[str] = None
-    latitude: Optional[float] = None
-    longitude: Optional[float] = None
+    city: str | None = None
+    locality: str | None = None
+    city_district: str | None = None
+    street: str | None = None
+    full_address: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
 
 
 class LocationCreate(LocationBase):
@@ -30,9 +30,9 @@ class Location(LocationBase):
 
 # Building schemas
 class BuildingBase(BaseModel):
-    year_built: Optional[int] = None
-    building_type: Optional[str] = None
-    floor: Optional[int] = None
+    year_built: int | None = None
+    building_type: str | None = None
+    floor: int | None = None
 
 
 class BuildingCreate(BuildingBase):
@@ -47,10 +47,10 @@ class Building(BuildingBase):
 
 # Owner schemas
 class OwnerBase(BaseModel):
-    owner_type: Optional[str] = None
-    contact_name: Optional[str] = None
-    contact_phone: Optional[str] = None
-    contact_email: Optional[str] = None
+    owner_type: str | None = None
+    contact_name: str | None = None
+    contact_phone: str | None = None
+    contact_email: str | None = None
 
 
 class OwnerCreate(OwnerBase):
@@ -65,12 +65,12 @@ class Owner(OwnerBase):
 
 # Features schemas
 class FeaturesBase(BaseModel):
-    has_basement: Optional[bool] = None
-    has_parking: Optional[bool] = None
-    kitchen_type: Optional[str] = None
-    window_type: Optional[str] = None
-    ownership_type: Optional[str] = None
-    equipment: Optional[str] = None
+    has_basement: bool | None = None
+    has_parking: bool | None = None
+    kitchen_type: str | None = None
+    window_type: str | None = None
+    ownership_type: str | None = None
+    equipment: str | None = None
 
 
 class FeaturesCreate(FeaturesBase):
@@ -89,16 +89,16 @@ class ListingBase(BaseModel):
     building_id: int
     owner_id: int
     features_id: int
-    rooms: Optional[int] = None
-    area: Optional[float] = None
-    price_total_zl: Optional[float] = None
-    price_sqm_zl: Optional[float] = None
-    price_per_sqm_detailed: Optional[float] = None
-    date_posted: Optional[date] = None
-    photo_count: Optional[int] = None
-    url: Optional[str] = None
-    image_url: Optional[str] = None
-    description_text: Optional[str] = None
+    rooms: int | None = None
+    area: float | None = None
+    price_total_zl: float | None = None
+    price_sqm_zl: float | None = None
+    price_per_sqm_detailed: float | None = None
+    date_posted: date | None = None
+    photo_count: int | None = None
+    url: str | None = None
+    image_url: str | None = None
+    description_text: str | None = None
 
 
 class ListingCreate(ListingBase):
@@ -113,34 +113,34 @@ class Listing(ListingBase):
 
 # Listing with relationships
 class ListingDetail(Listing):
-    location: Optional[Location] = None
-    building: Optional[Building] = None
-    owner: Optional[Owner] = None
-    features: Optional[Features] = None
+    location: Location | None = None
+    building: Building | None = None
+    owner: Owner | None = None
+    features: Features | None = None
 
 
 # Short schemas for the listings list (no description, URLs or FKs).
 class LocationSummary(BaseModel):
-    city: Optional[str] = None
-    city_district: Optional[str] = None
-    street: Optional[str] = None
+    city: str | None = None
+    city_district: str | None = None
+    street: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class ListingSummary(BaseModel):
     listing_id: int
-    rooms: Optional[int] = None
-    area: Optional[float] = None
-    price_total_zl: Optional[float] = None
-    price_sqm_zl: Optional[float] = None
+    rooms: int | None = None
+    area: float | None = None
+    price_total_zl: float | None = None
+    price_sqm_zl: float | None = None
     location: LocationSummary
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class ListingPage(BaseModel):
-    items: List[ListingSummary]
+    items: list[ListingSummary]
     total: int  # count after filters, independent of skip/limit
     skip: int
     limit: int

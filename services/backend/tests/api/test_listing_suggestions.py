@@ -1,4 +1,5 @@
 """GET /listings/suggestions: podpowiedzi miast i dzielnic dla autouzupełniania."""
+
 import pytest
 
 from sql_app import models
@@ -53,8 +54,15 @@ async def test_district_suggestions_narrowed_by_city(client, make_listing):
     await make_listing(city="Kraków", city_district="Krowodrza")
     await make_listing(city="Warszawa", city_district="Mokotów")
 
-    assert await suggest(client, field="city_district", city="Kraków") == ["Krowodrza", "Podgórze"]
-    assert await suggest(client, field="city_district") == ["Krowodrza", "Mokotów", "Podgórze"]
+    assert await suggest(client, field="city_district", city="Kraków") == [
+        "Krowodrza",
+        "Podgórze",
+    ]
+    assert await suggest(client, field="city_district") == [
+        "Krowodrza",
+        "Mokotów",
+        "Podgórze",
+    ]
 
 
 async def test_limit(client, make_listing):
@@ -80,7 +88,12 @@ async def test_literal_wildcard_still_matches(client, make_listing):
 
 @pytest.mark.parametrize(
     "params",
-    [{"field": "street"}, {}, {"field": "city", "limit": 51}, {"field": "city", "limit": 0}],
+    [
+        {"field": "street"},
+        {},
+        {"field": "city", "limit": 51},
+        {"field": "city", "limit": 0},
+    ],
 )
 async def test_invalid_params_return_422(client, params):
     response = await client.get("/listings/suggestions", params=params)

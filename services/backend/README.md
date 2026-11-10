@@ -202,7 +202,7 @@ services/backend/
 │   ├── schemas.py           # Pydantic request/response schemas
 │   ├── init_db.py           # Runs `alembic upgrade head`
 │   └── schema.sql           # Reference SQL schema (not used at runtime)
-├── scripts/                 # gen_model_docs.py, seed_listings.py
+├── scripts/                 # gen_model_docs.py, seed_listings.py, quality.sh (CI gate), mutation.sh (mutmut)
 ├── alembic/                 # Migration environment and versions
 ├── alembic.ini
 ├── setup.sh                 # Virtualenv + dependency installation
@@ -210,6 +210,24 @@ services/backend/
 ├── .env.example
 └── .claude/                 # Claude Code settings
 ```
+
+## Quality gate (CI)
+
+`.github/workflows/quality.yml` (repo root) runs on every pull request that touches `services/backend/`: `./scripts/quality.sh` (ruff lint, formatting check and `pytest --cov` with the `fail_under` threshold from `pyproject.toml`), then `diff-cover coverage.xml --compare-branch=origin/main --fail-under=90`, so the lines a PR adds or changes need 90% coverage. Run the script locally before pushing; `ruff check --fix . && ruff format .` fixes most lint findings.
+
+## Mutation testing
+
+[mutmut](https://mutmut.readthedocs.io/) measures how much the tests actually check: it applies one small change (a *mutant*) at a time to `main.py` and `sql_app/`, runs the tests that cover the changed function and expects at least one of them to fail. A mutant that survives points at behaviour no test asserts; a typical example is an error message that is never compared.
+
+```bash
+./scripts/mutation.sh                          # mutmut run + score check, fails below 75%
+MUTATION_SCORE_MIN=0 ./scripts/mutation.sh     # report only
+mutmut results                                 # list surviving mutants
+mutmut show main.x_listing_filters__mutmut_5   # one mutant as a diff
+mutmut browse                                  # interactive TUI
+```
+
+The configuration is the `[tool.mutmut]` section of `pyproject.toml`. The mutated surface mirrors the coverage settings (`sql_app/init_db.py` is skipped), and `tests/test_migrations.py` is left out because it runs the Alembic CLI from the backend root. mutmut works in a git-ignored copy under `mutants/` and caches results there, so repeated runs only retest what changed; delete the directory for a full run. A run takes well under a minute. CI runs it from `.github/workflows/mutation.yml` (manually and weekly), not on every pull request.
 
 ## Automated pull-request review
 
@@ -219,4 +237,4 @@ services/backend/
 
 - `sql_app/database.py` creates the engine with `echo=True`, which logs every SQL statement. Turn it off before deploying to production.
 - Local database files (`*.db`) and `.env` are git-ignored.
-- Tests live in `tests/` and run with `pytest -q` (in-memory SQLite).
+- Tests live in `tests/` and run with `pytest -q` (in-memory SQLite); see *Quality gate (CI)* above for lint and coverage.
