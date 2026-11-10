@@ -1,0 +1,13 @@
+{
+  "feat": { "emoji": "✨", "opis": "nowa funkcja widoczna dla użytkownika lub klienta API" },
+  "fix": { "emoji": "🐛", "opis": "poprawka błędu" },
+  "perf": { "emoji": "⚡️", "opis": "poprawa wydajności bez zmiany zachowania" },
+  "refactor": { "emoji": "♻️", "opis": "zmiana struktury kodu bez zmiany zachowania" },
+  "revert": { "emoji": "⏪️", "opis": "wycofanie wcześniejszego commita" },
+  "test": { "emoji": "✅", "opis": "tylko testy (dodanie lub poprawa)" },
+  "build": { "emoji": "📦️", "opis": "zależności, pyproject.toml, package.json, skrypty instalacyjne" },
+  "ci": { "emoji": "👷", "opis": "workflowy GitHub Actions i konfiguracja CI" },
+  "docs": { "emoji": "📝", "opis": "tylko dokumentacja (*.md)" },
+  "style": { "emoji": "🎨", "opis": "formatowanie, bez zmiany logiki" },
+  "chore": { "emoji": "🔧", "opis": "konfiguracja narzędzi i porządki, które nie pasują wyżej" }
+}
